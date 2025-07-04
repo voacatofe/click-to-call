@@ -4,169 +4,38 @@
       {
         "id": 1,
         "title": "Setup Project Repository and Initial Stack",
-        "description": "Initialize project repository with Node.js/TypeScript backend and React frontend, set up CI/CD pipeline, and define initial project structure.",
-        "details": "Create a new GitHub repository. Initialize with Node.js/TypeScript for backend (using Express or NestJS), React for frontend. Set up GitHub Actions for CI/CD. Configure linting, testing, and code formatting. Define folder structure for backend (src, tests, config) and frontend (src, public, components).",
-        "testStrategy": "Verify repository setup by running initial linting and test scripts. Ensure CI/CD pipeline triggers on push.",
+        "description": "Initialize project repository with Node.js/TypeScript backend and React frontend, set up CI/CD pipeline, and define initial project structure. This now includes the Docker and Easypanel production environment setup.",
+        "details": "Create a new GitHub repository. Initialize with Node.js/TypeScript for backend (using Express), React for frontend. Set up GitHub Actions for CI/CD. Configure linting, testing, and code formatting. Includes docker-compose.yml and Dockerfiles for production deployment.",
+        "testStrategy": "Verify repository setup by running initial linting and test scripts. Ensure CI/CD pipeline triggers on push. Confirm successful deployment to Easypanel.",
         "priority": "medium",
         "dependencies": [],
         "status": "done",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Create Project Repository",
-            "description": "Set up a new repository in the chosen version control system (e.g., GitHub), including a README file and initial security settings.",
-            "dependencies": [],
-            "details": "Initialize the repository, add a README to communicate project details, and configure basic security features such as branch protection and secret scanning.\n<info added on 2025-07-02T12:38:56.019Z>\n✅ TASK 1.1 CONCLUÍDA COM SUCESSO!\n\n🎯 Implementações realizadas:\n- README.md profissional criado com base no PRD\n- .gitignore configurado para Node.js/React\n- Repositório Git inicializado com commits organizados\n- Taskmaster configurado para gerenciamento de tarefas\n- Estrutura inicial do projeto documentada no README\n\n📝 Commits realizados:\n1. feat: initial project setup — README.md principal\n2. feat: add project configuration files — package.json, .gitignore, ESLint\n3. feat: add Taskmaster project management setup — configuração completa\n\n🚀 Status: Repositório criado e configurado com documentação completa\n📁 Arquivos principais: README.md, .gitignore, package.json, .taskmaster/\n\nPróximo passo: Task 1.2 - Define Folder Structure\n</info added on 2025-07-02T12:38:56.019Z>",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Define Folder Structure",
-            "description": "Establish a clear and organized folder structure for backend, frontend, and shared resources.",
-            "dependencies": [
-              1
-            ],
-            "details": "Create directories for backend, frontend, and any shared modules or documentation. Ensure the structure supports scalability and maintainability.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Initialize Backend Stack",
-            "description": "Set up the backend framework, initialize dependencies, and create starter files.",
-            "dependencies": [
-              2
-            ],
-            "details": "Choose a backend technology (e.g., Node.js, Python), initialize the project (e.g., npm init), and set up entry points and configuration files.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Initialize Frontend Stack",
-            "description": "Set up the frontend framework, initialize dependencies, and create starter files.",
-            "dependencies": [
-              2
-            ],
-            "details": "Choose a frontend technology (e.g., React, Vue), initialize the project (e.g., create-react-app), and set up entry points and configuration files.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Configure Linting and Testing",
-            "description": "Set up linting and testing tools for both backend and frontend to ensure code quality and consistency.",
-            "dependencies": [
-              3,
-              4
-            ],
-            "details": "Install and configure linters (e.g., ESLint, Prettier) and testing frameworks (e.g., Jest, Mocha) for both backend and frontend codebases.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Set Up CI/CD Pipeline",
-            "description": "Implement a CI/CD pipeline to automate building, testing, and deploying the application.",
-            "dependencies": [
-              5
-            ],
-            "details": "Configure a CI/CD tool (e.g., GitHub Actions) to run builds, tests, linting, and deployments on code changes, ensuring automated quality checks and deployments.",
-            "status": "done",
-            "testStrategy": ""
-          }
+          { "id": 1, "title": "Create Project Repository", "status": "done", "dependencies": [] },
+          { "id": 2, "title": "Define Folder Structure", "status": "done", "dependencies": [1] },
+          { "id": 3, "title": "Initialize Backend Stack", "status": "done", "dependencies": [2] },
+          { "id": 4, "title": "Initialize Frontend Stack", "status": "done", "dependencies": [2] },
+          { "id": 5, "title": "Configure Linting and Testing", "status": "done", "dependencies": [3, 4] },
+          { "id": 6, "title": "Set Up CI/CD Pipeline", "status": "done", "dependencies": [5] }
         ]
       },
       {
         "id": 2,
         "title": "RD Station API Integration Setup",
         "description": "Implement OAuth 2.0 authentication and basic API integration with RD Station CRM.",
-        "details": "Register application in RD Station developer portal. Implement OAuth 2.0 flow for authentication. Create backend endpoints to fetch contacts and deals, and to create activities/notes. Use RD Station API documentation for endpoints and data models. Store tokens securely.",
+        "details": "Register application in RD Station developer portal. Implement OAuth 2.0 flow for authentication. Create backend endpoints to fetch contacts and deals, and to create activities/notes. Store tokens securely.",
         "testStrategy": "Test authentication flow and API calls with mock data. Verify contact retrieval and activity creation.",
         "priority": "medium",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [1],
         "status": "in-progress",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Application Registration in RD Station",
-            "description": "Register the integration application in the RD Station developer portal to obtain the client_id and client_secret required for OAuth 2.0 authentication.",
-            "dependencies": [],
-            "details": "Follow the steps: log in to RD Station, access the authentication section, create a new app, provide necessary details (name, category, callback URL), and retrieve the generated credentials.[1]",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement OAuth 2.0 Authorization Flow",
-            "description": "Develop the OAuth 2.0 flow to securely authenticate and authorize the integration, enabling the application to obtain and refresh access tokens.",
-            "dependencies": [
-              1
-            ],
-            "details": "Implement the Authorization Code Grant flow, handle redirects, exchange authorization codes for tokens, and manage token refresh logic as per RD Station's documentation.[1][2]",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Secure Token Storage Implementation",
-            "description": "Design and implement a secure mechanism for storing and retrieving OAuth tokens (access and refresh tokens) in the backend.",
-            "dependencies": [
-              2
-            ],
-            "details": "Use encrypted storage or environment variables, ensure tokens are not exposed in logs or client-side code, and implement token rotation and revocation handling.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Backend Endpoint Creation for Contacts",
-            "description": "Develop backend endpoints to create, update, and retrieve contact information from RD Station via its API.",
-            "dependencies": [
-              3
-            ],
-            "details": "Utilize the RD Station API's contact management endpoints to synchronize contact data between your system and RD Station.[5]",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Backend Endpoint Creation for Deals",
-            "description": "Implement backend endpoints to manage deals (opportunities) in RD Station, supporting creation, update, and retrieval operations.",
-            "dependencies": [
-              3
-            ],
-            "details": "Integrate with RD Station's deals-related API endpoints to ensure deal data is accurately reflected and synchronized.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Backend Endpoint Creation for Activities/Notes",
-            "description": "Create backend endpoints to handle activities or notes associated with contacts or deals in RD Station.",
-            "dependencies": [
-              3
-            ],
-            "details": "Map your application's activity/note data model to RD Station's API structure and implement the necessary API calls.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "API Documentation Review and Contract Validation",
-            "description": "Thoroughly review RD Station's API documentation to ensure all implemented endpoints and flows adhere to the latest API contracts and best practices.",
-            "dependencies": [
-              4,
-              5,
-              6
-            ],
-            "details": "Validate request/response formats, error handling, rate limits, and required fields against the official documentation to ensure robust integration.[1][5]",
-            "status": "pending",
-            "testStrategy": ""
-          }
+            { "id": 1, "title": "Application Registration in RD Station", "status": "done", "dependencies": [] },
+            { "id": 2, "title": "Implement OAuth 2.0 Authorization Flow", "status": "done", "dependencies": [1] },
+            { "id": 3, "title": "Secure Token Storage Implementation", "status": "pending", "dependencies": [2] },
+            { "id": 4, "title": "Backend Endpoint Creation for Contacts", "status": "pending", "dependencies": [3] },
+            { "id": 5, "title": "Backend Endpoint Creation for Deals", "status": "pending", "dependencies": [3] },
+            { "id": 6, "title": "Backend Endpoint Creation for Activities/Notes", "status": "pending", "dependencies": [3] },
+            { "id": 7, "title": "API Documentation Review and Contract Validation", "status": "pending", "dependencies": [4, 5, 6] }
         ]
       },
       {
@@ -176,185 +45,36 @@
         "details": "Set up Twilio account and obtain API keys. Implement backend endpoints to initiate calls (WebRTC and call bridging). Use Twilio SDK for Node.js. Handle call events (answered, completed, failed) via webhooks. Store call metadata.",
         "testStrategy": "Test call initiation and event handling with test numbers. Verify webhook integration and call metadata storage.",
         "priority": "medium",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [1],
         "status": "pending",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Twilio Account Setup",
-            "description": "Create and configure a Twilio account to enable access to the Voice API and related services.",
-            "dependencies": [],
-            "details": "Sign up for a Twilio account, verify your email, and complete any required onboarding steps. Obtain your Account SID and Auth Token from the Twilio Console.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "API Key Management",
-            "description": "Generate and securely store Twilio API keys for authenticating API requests.",
-            "dependencies": [
-              1
-            ],
-            "details": "Create API keys and secrets in the Twilio Console. Store them securely in environment variables or a secrets manager. Use API keys for authentication in production environments as recommended by Twilio.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Backend Endpoint for Call Initiation",
-            "description": "Develop a backend endpoint to initiate outbound calls using the Twilio Voice API.",
-            "dependencies": [
-              2
-            ],
-            "details": "Implement an API endpoint (e.g., RESTful POST) that receives call initiation requests and uses the Twilio SDK or REST API to create calls. Ensure proper authentication and error handling.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "WebRTC Integration",
-            "description": "Integrate Twilio's WebRTC SDK to enable real-time voice communication in the client application.",
-            "dependencies": [
-              3
-            ],
-            "details": "Install and configure the Twilio Voice SDK for Web or mobile platforms. Set up client-side logic to connect to calls using WebRTC, handling media streams and device permissions.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Call Event Webhook Handling",
-            "description": "Implement webhook endpoints to receive and process call event notifications from Twilio.",
-            "dependencies": [
-              3
-            ],
-            "details": "Create HTTP endpoints to handle Twilio webhook POST requests for call events (e.g., call started, ringing, completed). Parse event payloads and respond with appropriate HTTP status codes.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Call Metadata Storage",
-            "description": "Design and implement storage for call metadata received from Twilio webhooks and API responses.",
-            "dependencies": [
-              5
-            ],
-            "details": "Store relevant call details (e.g., call SID, from/to numbers, timestamps, status) in a database for auditing, analytics, or user-facing features.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "SDK Usage and Helper Library Integration",
-            "description": "Integrate and utilize Twilio's official SDKs and helper libraries in the backend and client applications.",
-            "dependencies": [
-              2
-            ],
-            "details": "Install the appropriate Twilio SDKs (e.g., Node.js, Java, Python) and use them to interact with the Voice API, manage calls, and handle authentication.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 8,
-            "title": "Test Number Validation",
-            "description": "Implement logic to validate and manage test phone numbers for development and QA environments.",
-            "dependencies": [
-              3
-            ],
-            "details": "Configure Twilio test credentials and use Twilio-provided test numbers to simulate calls without incurring charges. Ensure validation logic prevents production calls during testing.",
-            "status": "pending",
-            "testStrategy": ""
-          }
+            { "id": 1, "title": "Twilio Account Setup", "status": "pending", "dependencies": [] },
+            { "id": 2, "title": "API Key Management", "status": "pending", "dependencies": [1] },
+            { "id": 3, "title": "Backend Endpoint for Call Initiation", "status": "pending", "dependencies": [2] },
+            { "id": 4, "title": "WebRTC Integration", "status": "pending", "dependencies": [3] },
+            { "id": 5, "title": "Call Event Webhook Handling", "status": "pending", "dependencies": [3] },
+            { "id": 6, "title": "Call Metadata Storage", "status": "pending", "dependencies": [5] },
+            { "id": 7, "title": "SDK Usage and Helper Library Integration", "status": "pending", "dependencies": [2] },
+            { "id": 8, "title": "Test Number Validation", "status": "pending", "dependencies": [3] }
         ]
       },
       {
         "id": 4,
-        "title": "Click-to-Call UI Integration in RD Station CRM",
-        "description": "Develop and integrate a click-to-call button within RD Station CRM interface.",
-        "details": "If possible, use RD Station marketplace integration to inject UI. Otherwise, develop a Chrome Extension to inject a 'Ligar' button next to phone numbers in CRM. Button triggers backend call initiation. Show call status (calling, connected, ended) in a simple overlay.",
-        "testStrategy": "Test button injection and call flow in RD Station CRM. Validate call status updates and overlay visibility.",
+        "title": "Develop Reusable Click-to-Call UI Component",
+        "description": "Develop a reusable UI component for click-to-call functionality, adaptable for various integrations (e.g., Chrome Extension, direct web embed).",
+        "details": "Instead of focusing solely on a Chrome Extension, the primary goal is to create a flexible, self-contained dialer component (e.g., in React). This component will handle UI states (idle, calling, connected) and trigger backend API calls. The initial implementation can be tested within the frontend application, and later adapted for a Chrome Extension or other CRM integrations.",
+        "testStrategy": "Test the component's UI states and event handling within a test page. Verify that it correctly triggers backend API endpoints for call initiation.",
         "priority": "medium",
-        "dependencies": [
-          2,
-          3
-        ],
+        "dependencies": [2, 3],
         "status": "pending",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Marketplace Integration Research",
-            "description": "Investigate available CRM or marketplace platforms for click-to-call integration, including API capabilities, authentication requirements, and UI compatibility.",
-            "dependencies": [],
-            "details": "Identify supported platforms, document integration prerequisites, and gather SDK or API documentation relevant to click-to-call functionality.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Chrome Extension Development",
-            "description": "Develop the foundational Chrome extension to support click-to-call UI injection and event handling within the browser.",
-            "dependencies": [
-              1
-            ],
-            "details": "Set up the extension manifest, permissions, and background/service worker scripts. Ensure the extension can access and modify the target CRM or marketplace pages.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "UI Injection Logic",
-            "description": "Implement logic within the extension to inject click-to-call UI elements (e.g., call button, overlays) into the target web application’s DOM.",
-            "dependencies": [
-              2
-            ],
-            "details": "Determine appropriate DOM locations for UI injection, ensure unique identifiers for components, and handle dynamic page content.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Button Event Handling",
-            "description": "Develop event listeners and handlers for the injected click-to-call button and related UI controls (e.g., hang up, mute, keypad).",
-            "dependencies": [
-              3
-            ],
-            "details": "Ensure button clicks trigger the correct frontend logic and prepare data for backend call initiation. Handle UI state changes and error/success feedback.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Backend Call Trigger",
-            "description": "Implement the backend logic to initiate phone calls when the click-to-call button is activated, interfacing with telephony APIs or services.",
-            "dependencies": [
-              4
-            ],
-            "details": "Set up secure API endpoints, manage authentication (e.g., JWT tokens), and handle call initiation requests from the frontend.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Call Status Overlay",
-            "description": "Create and manage a UI overlay that displays real-time call status, including dialing, connected, error, and hang-up states.",
-            "dependencies": [
-              5
-            ],
-            "details": "Update the overlay based on backend responses and user actions. Ensure accessibility and non-intrusive design.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "End-to-End Flow Testing",
-            "description": "Conduct comprehensive end-to-end testing of the click-to-call integration, covering UI injection, event handling, backend call initiation, and status overlays.",
-            "dependencies": [],
-            "details": "Automate tests using browser testing libraries (e.g., Puppeteer, Selenium), simulate user interactions, and validate the complete user journey.",
-            "status": "pending",
-            "testStrategy": ""
-          }
+            { "id": 1, "title": "Marketplace Integration Research", "status": "pending", "dependencies": [] },
+            { "id": 2, "title": "Chrome Extension Development", "status": "pending", "dependencies": [1] },
+            { "id": 3, "title": "UI Injection Logic", "status": "pending", "dependencies": [2] },
+            { "id": 4, "title": "Button Event Handling", "status": "pending", "dependencies": [3] },
+            { "id": 5, "title": "Backend Call Trigger", "status": "pending", "dependencies": [4] },
+            { "id": 6, "title": "Call Status Overlay", "status": "pending", "dependencies": [5] },
+            { "id": 7, "title": "End-to-End Flow Testing", "status": "pending", "dependencies": [] }
         ]
       },
       {
@@ -364,10 +84,7 @@
         "details": "On call completion, backend receives event from Twilio. Fetch call metadata (duration, result, recording URL). Create activity/note in RD Station CRM via API. Include call details and link to recording if available.",
         "testStrategy": "Test end-to-end flow: call → event → log creation in CRM. Verify all metadata is correctly stored.",
         "priority": "medium",
-        "dependencies": [
-          2,
-          3
-        ],
+        "dependencies": [2, 3],
         "status": "pending",
         "subtasks": []
       },
@@ -375,91 +92,19 @@
         "id": 6,
         "title": "Secure Call Recording Storage and Compliance",
         "description": "Implement secure storage and management of call recordings with compliance to LGPD.",
-        "details": "Store call recordings in encrypted cloud storage (e.g., Amazon S3). Generate secure, time-limited access URLs. Implement data retention and deletion policies. Ensure compliance with LGPD for personal data.",
+        "details": "Store call recordings in an S3-compatible encrypted cloud storage (e.g., Amazon S3, DigitalOcean Spaces, MinIO), which can be easily integrated with the production environment. Generate secure, time-limited access URLs. Implement data retention and deletion policies. Ensure compliance with LGPD for personal data.",
         "testStrategy": "Test recording upload, download, and deletion. Verify access controls and compliance checks.",
         "priority": "medium",
-        "dependencies": [
-          3
-        ],
+        "dependencies": [3],
         "status": "pending",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Encrypted Cloud Storage Setup",
-            "description": "Configure and provision secure, encrypted cloud storage for call recordings, ensuring compliance with industry standards and best practices.",
-            "dependencies": [],
-            "details": "Select a cloud provider supporting end-to-end encryption and data integrity checks. Set up storage buckets or containers with encryption at rest and in transit. Document encryption keys management procedures.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Recording Upload Implementation",
-            "description": "Develop and integrate the logic to securely upload call recordings to the encrypted cloud storage, ensuring data integrity and reliability.",
-            "dependencies": [
-              1
-            ],
-            "details": "Implement upload APIs or SDKs, validate checksums during upload, and handle upload errors or retries. Ensure uploads are logged for audit purposes.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Time-Limited URL Generation",
-            "description": "Implement functionality to generate secure, time-limited URLs for accessing stored call recordings.",
-            "dependencies": [
-              2
-            ],
-            "details": "Use cloud provider mechanisms (e.g., signed URLs) to allow temporary, controlled access to recordings. Ensure URLs expire after the defined period and cannot be reused.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Data Retention Policy Enforcement",
-            "description": "Automate enforcement of data retention policies to ensure recordings are stored only for the legally required period.",
-            "dependencies": [
-              2
-            ],
-            "details": "Configure lifecycle management rules in cloud storage to automatically delete or archive recordings after the retention period. Document retention schedules and exceptions.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Deletion Logic Implementation",
-            "description": "Develop and test secure deletion logic for call recordings, ensuring compliance with data protection regulations.",
-            "dependencies": [
-              4
-            ],
-            "details": "Implement deletion workflows that securely erase recordings from storage, including metadata and backups. Log all deletion actions for auditability.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Compliance Checks (e.g., LGPD)",
-            "description": "Review and validate that all storage, access, and deletion processes comply with relevant legal and regulatory requirements such as LGPD.",
-            "dependencies": [
-              4,
-              5
-            ],
-            "details": "Conduct compliance audits, document findings, and address any gaps. Ensure processes support data subject rights (e.g., right to erasure, access logs).",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Access Control Validation",
-            "description": "Test and validate access controls to ensure only authorized users can access, download, or manage call recordings.",
-            "dependencies": [
-              3,
-              6
-            ],
-            "details": "Review and test role-based access controls, audit access logs, and perform penetration testing to identify and remediate vulnerabilities.",
-            "status": "pending",
-            "testStrategy": ""
-          }
+            { "id": 1, "title": "Encrypted Cloud Storage Setup", "status": "pending", "dependencies": [] },
+            { "id": 2, "title": "Recording Upload Implementation", "status": "pending", "dependencies": [1] },
+            { "id": 3, "title": "Time-Limited URL Generation", "status": "pending", "dependencies": [2] },
+            { "id": 4, "title": "Data Retention Policy Enforcement", "status": "pending", "dependencies": [2] },
+            { "id": 5, "title": "Deletion Logic Implementation", "status": "pending", "dependencies": [4] },
+            { "id": 6, "title": "Compliance Checks (e.g., LGPD)", "status": "pending", "dependencies": [4, 5] },
+            { "id": 7, "title": "Access Control Validation", "status": "pending", "dependencies": [3, 6] }
         ]
       },
       {
@@ -469,10 +114,7 @@
         "details": "Create a React dashboard to display call volume, duration, success rate, and agent rankings. Aggregate data from backend database. Optionally, explore integration with RD Station CRM analytics if API allows. Use Chart.js or D3.js for visualizations.",
         "testStrategy": "Test dashboard with mock and real data. Verify data aggregation and visualization accuracy.",
         "priority": "medium",
-        "dependencies": [
-          1,
-          5
-        ],
+        "dependencies": [1, 5],
         "status": "pending",
         "subtasks": []
       },
@@ -483,16 +125,25 @@
         "details": "Develop step-by-step onboarding guides for admins and users. Create FAQ and help articles. Implement in-app tooltips and support links. Prepare materials for email and LinkedIn campaigns targeting ex-Zenvia users.",
         "testStrategy": "Validate onboarding flow with test users. Review documentation for clarity and completeness.",
         "priority": "medium",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Finalize Production Infrastructure Setup",
+        "description": "Finalize and document the production deployment infrastructure, including Docker, Easypanel, and Prisma migration scripts.",
+        "details": "This task involves three key areas: 1. Documenting the complete step-by-step deployment process in the main README.md. 2. Creating a dedicated, non-interactive script (`npm run migrate:prod`) that runs `npx prisma migrate deploy`. 3. Adding health check configurations to the `docker-compose.yml`.",
+        "testStrategy": "1. Verify README.md documentation. 2. Run the migration script against the production database. 3. Observe the container startup sequence with health checks.",
+        "priority": "high",
+        "dependencies": [1, 2, 3, 4, 5, 6, 7, 8],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-07-02T12:11:29.998Z",
-      "updated": "2025-07-04T17:19:38.157Z",
+      "updated": "2025-07-04T19:30:00.000Z",
       "description": "Tasks for master context"
     }
   }

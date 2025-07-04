@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 app.listen(Number(port), '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${port}`);

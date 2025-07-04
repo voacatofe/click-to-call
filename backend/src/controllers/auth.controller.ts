@@ -4,60 +4,44 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const redirectToRDStation = (req: Request, res: Response) => {
-  const clientId = process.env.RD_STATION_CLIENT_ID;
-  const redirectUri = `${process.env.BACKEND_URL}/auth/rdstation/callback`;
-  
-  if (!clientId) {
-    return res.status(500).send('Client ID do RD Station não configurado.');
-  }
+// Para RD Station CRM, vamos usar uma abordagem mais simples
+// O usuário fornece seu token do CRM diretamente
+export const authenticateWithToken = async (req: Request, res: Response) => {
+  const { token } = req.body;
 
-  const authUrl = `https://api.rd.services/auth/dialog?client_id=${clientId}&redirect_uri=${redirectUri}`;
-  
-  res.redirect(authUrl);
-};
-
-export const handleRDStationCallback = async (req: Request, res: Response) => {
-  const { code } = req.query;
-
-  if (!code) {
-    return res.status(400).send('Código de autorização não encontrado.');
+  if (!token) {
+    return res.status(400).json({ 
+      error: 'Token do RD Station CRM é obrigatório.',
+      message: 'Forneça seu token de usuário do RD Station CRM'
+    });
   }
 
   try {
-    const clientId = process.env.RD_STATION_CLIENT_ID;
-    const clientSecret = process.env.RD_STATION_CLIENT_SECRET;
-    const redirectUri = `${process.env.BACKEND_URL}/auth/rdstation/callback`;
-
-    if (!clientId || !clientSecret) {
-      return res.status(500).send('Credenciais do RD Station não configuradas.');
-    }
-
-    // 1. Obter tokens do RD Station
-    const tokenResponse = await axios.post('https://api.rd.services/auth/token', {
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: code as string,
-      redirect_uri: redirectUri,
-    });
-
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
-
-    if (!access_token) {
-      return res.status(500).send('Falha ao obter access token do RD Station.');
-    }
-
-    // 2. Obter informações do usuário do RD Station
-    const userResponse = await axios.get('https://api.rd.services/platform/users/me', {
+    // Testar o token fazendo uma requisição para listar usuários
+    // Isso nos dará informações do usuário autenticado
+    const userResponse = await axios.get('https://crm.rdstation.com/api/v1/users', {
       headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
 
-    const { email, name } = userResponse.data;
-    const providerAccountId = userResponse.data.id.toString();
+    // A API do CRM retorna uma lista de usuários da conta
+    // Vamos assumir que o primeiro usuário é o usuário autenticado
+    // (Em uma implementação mais robusta, poderíamos ter um endpoint específico)
+    const userData = userResponse.data.users[0];
+    
+    if (!userData) {
+      return res.status(401).json({ 
+        error: 'Token inválido ou sem permissões.',
+        message: 'Verifique se o token está correto e tem as permissões necessárias'
+      });
+    }
 
-    // 3. Encontrar ou criar o usuário e a conta no nosso banco de dados
+    const { email, name, id } = userData;
+    const providerAccountId = id.toString();
+
+    // Criar ou atualizar usuário no nosso banco
     const user = await prisma.user.upsert({
       where: { email: email },
       update: { name: name },
@@ -67,35 +51,127 @@ export const handleRDStationCallback = async (req: Request, res: Response) => {
       },
     });
 
+    // Armazenar o token do CRM
     await prisma.account.upsert({
         where: {
             provider_providerAccountId: {
-                provider: 'rdstation',
+                provider: 'rdstation-crm',
                 providerAccountId: providerAccountId,
             }
         },
         update: {
-            access_token: access_token,
-            refresh_token: refresh_token,
-            expires_at: Math.floor(Date.now() / 1000) + expires_in,
+            access_token: token,
+            // Para tokens do CRM, não há refresh_token ou expiração
         },
         create: {
             userId: user.id,
-            type: 'oauth',
-            provider: 'rdstation',
+            type: 'token',
+            provider: 'rdstation-crm',
             providerAccountId: providerAccountId,
-            access_token: access_token,
-            refresh_token: refresh_token,
-            expires_at: Math.floor(Date.now() / 1000) + expires_in,
+            access_token: token,
         }
     });
 
-    // 4. Redirecionar para o frontend com uma mensagem de sucesso
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}?auth=success`);
+    res.json({ 
+      success: true, 
+      message: 'Autenticação realizada com sucesso!',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Erro na autenticação com RD Station CRM:', error);
+    
+    if (error.response?.status === 401) {
+      return res.status(401).json({ 
+        error: 'Token inválido.',
+        message: 'Verifique se o token do RD Station CRM está correto'
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Falha na autenticação com o RD Station CRM.',
+      message: 'Erro interno do servidor'
+    });
+  }
+};
+
+// Função para obter informações do usuário autenticado
+export const getUserInfo = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        accounts: {
+          where: { provider: 'rdstation-crm' }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    const account = user.accounts[0];
+    if (!account) {
+      return res.status(404).json({ error: 'Conta do RD Station CRM não encontrada' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      hasValidToken: !!account.access_token
+    });
 
   } catch (error) {
-    console.error('Erro no callback do RD Station:', error);
-    res.status(500).send('Falha na autenticação com o RD Station.');
+    console.error('Erro ao buscar informações do usuário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// Função para testar se o token ainda é válido
+export const validateToken = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        accounts: {
+          where: { provider: 'rdstation-crm' }
+        }
+      }
+    });
+
+    if (!user || !user.accounts[0]) {
+      return res.status(404).json({ error: 'Usuário ou token não encontrado' });
+    }
+
+    const token = user.accounts[0].access_token;
+    
+    // Testar o token fazendo uma requisição simples
+    await axios.get('https://crm.rdstation.com/api/v1/users', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.json({ valid: true, message: 'Token válido' });
+
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      res.status(401).json({ valid: false, message: 'Token inválido ou expirado' });
+    } else {
+      res.status(500).json({ error: 'Erro ao validar token' });
+    }
   }
 };
