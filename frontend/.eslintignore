@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+dist
+build
+*.log
+.env*
+public
+.prettierrc
+next.config.js
+postcss.config.mjs
+tailwind.config.js 
