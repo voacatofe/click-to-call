@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: RD Station API Integration Setup
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Implement OAuth 2.0 authentication and basic API integration with RD Station CRM.
+# Details:
+Register application in RD Station developer portal. Implement OAuth 2.0 flow for authentication. Create backend endpoints to fetch contacts and deals, and to create activities/notes. Use RD Station API documentation for endpoints and data models. Store tokens securely.
+
+# Test Strategy:
+Test authentication flow and API calls with mock data. Verify contact retrieval and activity creation.

@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Metrics Dashboard and Reporting
+# Status: pending
+# Dependencies: 1, 5
+# Priority: medium
+# Description: Develop a dashboard for call metrics and reporting.
+# Details:
+Create a React dashboard to display call volume, duration, success rate, and agent rankings. Aggregate data from backend database. Optionally, explore integration with RD Station CRM analytics if API allows. Use Chart.js or D3.js for visualizations.
+
+# Test Strategy:
+Test dashboard with mock and real data. Verify data aggregation and visualization accuracy.

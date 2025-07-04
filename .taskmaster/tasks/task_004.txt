@@ -1,0 +1,55 @@
+# Task ID: 4
+# Title: Click-to-Call UI Integration in RD Station CRM
+# Status: pending
+# Dependencies: 2, 3
+# Priority: medium
+# Description: Develop and integrate a click-to-call button within RD Station CRM interface.
+# Details:
+If possible, use RD Station marketplace integration to inject UI. Otherwise, develop a Chrome Extension to inject a 'Ligar' button next to phone numbers in CRM. Button triggers backend call initiation. Show call status (calling, connected, ended) in a simple overlay.
+
+# Test Strategy:
+Test button injection and call flow in RD Station CRM. Validate call status updates and overlay visibility.
+
+# Subtasks:
+## 1. Marketplace Integration Research [pending]
+### Dependencies: None
+### Description: Investigate available CRM or marketplace platforms for click-to-call integration, including API capabilities, authentication requirements, and UI compatibility.
+### Details:
+Identify supported platforms, document integration prerequisites, and gather SDK or API documentation relevant to click-to-call functionality.
+
+## 2. Chrome Extension Development [pending]
+### Dependencies: 4.1
+### Description: Develop the foundational Chrome extension to support click-to-call UI injection and event handling within the browser.
+### Details:
+Set up the extension manifest, permissions, and background/service worker scripts. Ensure the extension can access and modify the target CRM or marketplace pages.
+
+## 3. UI Injection Logic [pending]
+### Dependencies: 4.2
+### Description: Implement logic within the extension to inject click-to-call UI elements (e.g., call button, overlays) into the target web application’s DOM.
+### Details:
+Determine appropriate DOM locations for UI injection, ensure unique identifiers for components, and handle dynamic page content.
+
+## 4. Button Event Handling [pending]
+### Dependencies: 4.3
+### Description: Develop event listeners and handlers for the injected click-to-call button and related UI controls (e.g., hang up, mute, keypad).
+### Details:
+Ensure button clicks trigger the correct frontend logic and prepare data for backend call initiation. Handle UI state changes and error/success feedback.
+
+## 5. Backend Call Trigger [pending]
+### Dependencies: 4.4
+### Description: Implement the backend logic to initiate phone calls when the click-to-call button is activated, interfacing with telephony APIs or services.
+### Details:
+Set up secure API endpoints, manage authentication (e.g., JWT tokens), and handle call initiation requests from the frontend.
+
+## 6. Call Status Overlay [pending]
+### Dependencies: 4.5
+### Description: Create and manage a UI overlay that displays real-time call status, including dialing, connected, error, and hang-up states.
+### Details:
+Update the overlay based on backend responses and user actions. Ensure accessibility and non-intrusive design.
+
+## 7. End-to-End Flow Testing [pending]
+### Dependencies: None
+### Description: Conduct comprehensive end-to-end testing of the click-to-call integration, covering UI injection, event handling, backend call initiation, and status overlays.
+### Details:
+Automate tests using browser testing libraries (e.g., Puppeteer, Selenium), simulate user interactions, and validate the complete user journey.
+

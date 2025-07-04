@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Automatic Call Logging in CRM
+# Status: pending
+# Dependencies: 2, 3
+# Priority: medium
+# Description: Automatically log call details as activities/notes in RD Station CRM.
+# Details:
+On call completion, backend receives event from Twilio. Fetch call metadata (duration, result, recording URL). Create activity/note in RD Station CRM via API. Include call details and link to recording if available.
+
+# Test Strategy:
+Test end-to-end flow: call → event → log creation in CRM. Verify all metadata is correctly stored.

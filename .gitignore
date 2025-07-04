@@ -30,9 +30,5 @@ backend/.env
 # OS specific
 .DS_Store
 
-# Task files
-tasks.json
-tasks/ 
-
 # Cursor MCP configuration (contains API keys)
 .cursor/mcp.json 

@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Onboarding, Documentation, and Support Materials
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Create self-service onboarding, documentation, and support resources.
+# Details:
+Develop step-by-step onboarding guides for admins and users. Create FAQ and help articles. Implement in-app tooltips and support links. Prepare materials for email and LinkedIn campaigns targeting ex-Zenvia users.
+
+# Test Strategy:
+Validate onboarding flow with test users. Review documentation for clarity and completeness.
