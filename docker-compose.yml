@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-click_to_call}
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
     ports:
-      - "3001:3001"
+      - "13001:3001"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-click_to_call}
       - RD_STATION_CLIENT_ID=${RD_STATION_CLIENT_ID}
@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "3002:3000"
+      - "13002:3000"
     networks:
       - app-network
 
