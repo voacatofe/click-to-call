@@ -4,7 +4,8 @@ import globals from "globals";
 export default [
   js.configs.recommended,
   {
-    files: ["**/*.{js,mjs,cjs,jsx}"],
+    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
+    ignores: ["frontend/**/*", "node_modules/**/*"],
     languageOptions: {
       globals: {
         ...globals.browser,
