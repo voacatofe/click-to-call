@@ -10,6 +10,11 @@ services:
       - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-click_to_call}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - app-network
 
@@ -19,31 +24,10 @@ services:
       dockerfile: Dockerfile
     restart: always
     depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-click_to_call}
-      - RD_STATION_CLIENT_ID=${RD_STATION_CLIENT_ID}
-      - RD_STATION_CLIENT_SECRET=${RD_STATION_CLIENT_SECRET}
-      - BACKEND_URL=${BACKEND_URL}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - RD_STATION_API_BASE=${RD_STATION_API_BASE}
-      - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_REFRESH_EXPIRATION_TIME=${JWT_REFRESH_EXPIRATION_TIME}
-      - JWT_RESET_SECRET=${JWT_RESET_SECRET}
-      - JWT_RESET_EXPIRATION_TIME=${JWT_RESET_EXPIRATION_TIME}
-      - JWT_VERIFY_SECRET=${JWT_VERIFY_SECRET}
-      - JWT_VERIFY_EXPIRATION_TIME=${JWT_VERIFY_EXPIRATION_TIME}
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - LOG_FORMAT=${LOG_FORMAT}
-      - LOG_FILE=${LOG_FILE}
-      - LOG_MAX_SIZE=${LOG_MAX_SIZE}
-      - LOG_MAX_FILES=${LOG_MAX_FILES}
-      - LOG_FILE_ENCODING=${LOG_FILE_ENCODING}
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
     networks:
       - app-network
     labels:
