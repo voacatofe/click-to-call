@@ -48,6 +48,10 @@ services:
       - LOG_FILE_ENCODING=${LOG_FILE_ENCODING}
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app-network"
+      - "traefik.http.services.backend.loadbalancer.server.port=3001"
 
   frontend:
     build:
@@ -58,6 +62,10 @@ services:
       - "13002:3000"
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=app-network"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
 networks:
   app-network:
