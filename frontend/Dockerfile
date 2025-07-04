@@ -8,10 +8,12 @@ RUN npm run build
 
 # Stage 2: Production
 FROM node:20-alpine
-WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/.next ./.next
-COPY --from=builder /usr/src/app/public ./public
-COPY package*.json .
+WORKDIR /app
+
+# Copiar os arquivos da compilação otimizada
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
 EXPOSE 3000
-CMD ["npm", "start"] 
+CMD ["node", "server.js"] 

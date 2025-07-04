@@ -15,7 +15,7 @@ export default tseslint.config(
   },
   {
     files: ["backend/**/*.{js,mjs,cjs,jsx,ts,tsx}"],
-    ignores: ["backend/node_modules/**/*", "backend/dist/**/*"],
+    ignores: ["backend/node_modules/**/*", "backend/dist/**/*", "**/*.config.js", "**/*.config.mjs"],
     languageOptions: {
       globals: {
         ...globals.browser,
