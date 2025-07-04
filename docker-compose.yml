@@ -20,8 +20,6 @@ services:
     restart: always
     depends_on:
       - db
-    ports:
-      - "13001:3001"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-click_to_call}
       - RD_STATION_CLIENT_ID=${RD_STATION_CLIENT_ID}
@@ -50,22 +48,20 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=app-network"
       - "traefik.http.services.backend.loadbalancer.server.port=3001"
+      - "traefik.docker.network=app-network"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "13002:3000"
     networks:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=app-network"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.docker.network=app-network"
 
 networks:
   app-network:
