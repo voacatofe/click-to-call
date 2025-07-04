@@ -11,7 +11,10 @@ export default function RegisterPage() {
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,19 +27,25 @@ export default function RegisterPage() {
     setMessage(null);
 
     if (formData.password.length < 6) {
-      setMessage({ type: 'error', text: 'A senha deve ter pelo menos 6 caracteres.' });
+      setMessage({
+        type: 'error',
+        text: 'A senha deve ter pelo menos 6 caracteres.',
+      });
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
         },
-        body: JSON.stringify(formData),
-      });
+      );
 
       const data = await response.json();
 
@@ -44,13 +53,15 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Ocorreu um erro no registro.');
       }
 
-      setMessage({ type: 'success', text: 'Registro bem-sucedido! Você será redirecionado para o login.' });
-      
+      setMessage({
+        type: 'success',
+        text: 'Registro bem-sucedido! Você será redirecionado para o login.',
+      });
+
       // Opcional: Redirecionar para o login após um curto período
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
-
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -70,7 +81,10 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="companyName" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="companyName"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Nome da Empresa
             </label>
             <input
@@ -84,7 +98,10 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="name"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Seu Nome
             </label>
             <input
@@ -98,7 +115,10 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Seu Email
             </label>
             <input
@@ -112,7 +132,10 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Senha
             </label>
             <input
@@ -146,7 +169,10 @@ export default function RegisterPage() {
         )}
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Já tem uma conta?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:underline dark:text-blue-500">
+          <Link
+            href="/login"
+            className="font-medium text-blue-600 hover:underline dark:text-blue-500"
+          >
             Faça login aqui
           </Link>
         </p>

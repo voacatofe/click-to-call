@@ -5,7 +5,10 @@ import { useState } from 'react';
 export default function AuthForm() {
   const [token, setToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -19,13 +22,16 @@ export default function AuthForm() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/rdstation-crm/authenticate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/integration/rdstation-crm/authenticate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
         },
-        body: JSON.stringify({ token }),
-      });
+      );
 
       const data = await response.json();
 
@@ -33,10 +39,10 @@ export default function AuthForm() {
         throw new Error(data.message || 'Ocorreu um erro na autenticação.');
       }
 
-      setMessage({ type: 'success', text: data.message || 'Autenticação bem-sucedida!' });
-      // Aqui você pode salvar o estado de autenticação, por exemplo no localStorage
-      // localStorage.setItem('user', JSON.stringify(data.user));
-
+      setMessage({
+        type: 'success',
+        text: data.message || 'Autenticação bem-sucedida!',
+      });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -55,18 +61,43 @@ export default function AuthForm() {
         </p>
 
         <div className="mb-6 rounded-md border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
-          <h2 className="mb-2 font-semibold text-gray-800 dark:text-gray-200">Como encontrar seu Token:</h2>
+          <h2 className="mb-2 font-semibold text-gray-800 dark:text-gray-200">
+            Como encontrar seu Token:
+          </h2>
           <ol className="list-inside list-decimal space-y-1 text-sm text-gray-600 dark:text-gray-400">
-            <li>Acesse seu <a href="https://crm.rdstation.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline dark:text-blue-500">perfil no RD Station CRM</a>.</li>
-            <li>Clique no seu nome (canto superior direito) e vá em <strong>"Perfil & Preferências"</strong>.</li>
-            <li>Na nova tela, selecione a aba <strong>"Integrações"</strong>.</li>
-            <li>Copie o <strong>"Token da instância"</strong> e cole no campo abaixo.</li>
+            <li>
+              Acesse seu{' '}
+              <a
+                href="https://crm.rdstation.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline dark:text-blue-500"
+              >
+                perfil no RD Station CRM
+              </a>
+              .
+            </li>
+            <li>
+              Clique no seu nome (canto superior direito) e vá em{' '}
+              <strong>&quot;Perfil &amp; Preferências&quot;</strong>.
+            </li>
+            <li>
+              Na nova tela, selecione a aba{' '}
+              <strong>&quot;Integrações&quot;</strong>.
+            </li>
+            <li>
+              Copie o <strong>&quot;Token da instância&quot;</strong> e cole no
+              campo abaixo.
+            </li>
           </ol>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="token" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="token"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Seu Token da Instância
             </label>
             <input
@@ -74,7 +105,7 @@ export default function AuthForm() {
               id="token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               placeholder="Cole seu token aqui"
               required
               disabled={isLoading}
