@@ -11,12 +11,12 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('API Click-to-Call está no ar!');
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
 app.use('/auth', authRoutes);
 
-app.listen(port, () => {
+app.listen(Number(port), '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
