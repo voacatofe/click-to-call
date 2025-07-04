@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const redirectToRDStation = (req: Request, res: Response) => {
   const clientId = process.env.RD_STATION_CLIENT_ID;
@@ -30,23 +33,69 @@ export const handleRDStationCallback = async (req: Request, res: Response) => {
       return res.status(500).send('Credenciais do RD Station não configuradas.');
     }
 
-    const response = await axios.post('https://api.rd.services/auth/token', {
+    // 1. Obter tokens do RD Station
+    const tokenResponse = await axios.post('https://api.rd.services/auth/token', {
       client_id: clientId,
       client_secret: clientSecret,
       code: code as string,
       redirect_uri: redirectUri,
     });
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Próximo passo: Armazenar os tokens de forma segura (subtarefa 2.3)
-    // Por enquanto, vamos apenas enviá-los de volta para o frontend para teste
+    if (!access_token) {
+      return res.status(500).send('Falha ao obter access token do RD Station.');
+    }
 
+    // 2. Obter informações do usuário do RD Station
+    const userResponse = await axios.get('https://api.rd.services/platform/users/me', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    });
+
+    const { email, name } = userResponse.data;
+    const providerAccountId = userResponse.data.id.toString();
+
+    // 3. Encontrar ou criar o usuário e a conta no nosso banco de dados
+    const user = await prisma.user.upsert({
+      where: { email: email },
+      update: { name: name },
+      create: {
+        email: email,
+        name: name,
+      },
+    });
+
+    await prisma.account.upsert({
+        where: {
+            provider_providerAccountId: {
+                provider: 'rdstation',
+                providerAccountId: providerAccountId,
+            }
+        },
+        update: {
+            access_token: access_token,
+            refresh_token: refresh_token,
+            expires_at: Math.floor(Date.now() / 1000) + expires_in,
+        },
+        create: {
+            userId: user.id,
+            type: 'oauth',
+            provider: 'rdstation',
+            providerAccountId: providerAccountId,
+            access_token: access_token,
+            refresh_token: refresh_token,
+            expires_at: Math.floor(Date.now() / 1000) + expires_in,
+        }
+    });
+
+    // 4. Redirecionar para o frontend com uma mensagem de sucesso
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}?access_token=${access_token}&refresh_token=${refresh_token}`);
+    res.redirect(`${frontendUrl}?auth=success`);
 
   } catch (error) {
-    console.error('Erro ao obter token do RD Station:', error);
-    res.status(500).send('Falha ao obter token de acesso.');
+    console.error('Erro no callback do RD Station:', error);
+    res.status(500).send('Falha na autenticação com o RD Station.');
   }
 };
