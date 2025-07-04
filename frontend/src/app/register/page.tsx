@@ -150,7 +150,7 @@ export default function RegisterPage() {
           </div>
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center text-base font-medium text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none disabled:opacity-50"
             disabled={isLoading}
           >
             {isLoading ? 'Registrando...' : 'Criar Conta'}

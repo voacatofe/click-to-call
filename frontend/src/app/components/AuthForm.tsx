@@ -113,7 +113,7 @@ export default function AuthForm() {
           </div>
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none disabled:opacity-50"
             disabled={isLoading}
           >
             {isLoading ? 'Conectando...' : 'Conectar'}
@@ -134,4 +134,4 @@ export default function AuthForm() {
       </div>
     </div>
   );
-} 
+}
