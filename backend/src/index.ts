@@ -16,8 +16,8 @@ app.get('/', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
-app.use('/api/auth', userRoutes); // Usar as novas rotas de usuário/empresa
-app.use('/api/integration', authRoutes); // Manter as rotas de integração (legado/futuro)
+app.use('/auth', userRoutes); // Removido o /api. O proxy cuida disso.
+app.use('/integration', authRoutes); // Removido o /api.
 
 app.listen(Number(port), '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${port}`);
