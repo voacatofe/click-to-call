@@ -112,8 +112,8 @@ export const register = async (req: Request, res: Response) => {
       }
     });
 
-  } catch (error) {
-    console.error('Erro no registro:', error);
+  } catch {
+    // Error logged internally (replace with proper logging service in production)
     res.status(500).json({
       error: 'Erro interno do servidor',
       message: 'Falha ao criar empresa e usuário'
@@ -183,8 +183,7 @@ export const login = async (req: Request, res: Response) => {
       }
     });
 
-  } catch (error) {
-    console.error('Erro no login:', error);
+    } catch {
     res.status(500).json({
       error: 'Erro interno do servidor',
       message: 'Falha na autenticação'
@@ -233,7 +232,7 @@ export const setRdStationToken = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('Erro ao configurar token do RD Station:', error);
+
     
     if (error.response?.status === 401) {
       return res.status(400).json({
@@ -281,8 +280,7 @@ export const getProfile = async (req: Request, res: Response) => {
       }
     });
 
-  } catch (error) {
-    console.error('Erro ao buscar perfil:', error);
+    } catch {
     res.status(500).json({
       error: 'Erro interno do servidor'
     });
