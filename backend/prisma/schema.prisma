@@ -13,6 +13,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Modelo para empresas/clientes da sua aplicação
+model Company {
+  id                String  @id @default(cuid())
+  name              String
+  rdStationCrmToken String? // O token do RD Station CRM será armazenado aqui
+  users             User[]  // Uma empresa pode ter vários usuários
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String    // Adicionamos o campo de senha para login próprio
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER) // ADMIN ou USER
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  accounts Account[]
+  sessions Session[]
+}
+
+// Modelo de conta para OAuth (ex: Login com Google, etc.)
+// A autenticação do RD CRM será feita pelo token na tabela Company
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -32,11 +63,11 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
+// Modelo para gerenciar sessões de login dos usuários
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
