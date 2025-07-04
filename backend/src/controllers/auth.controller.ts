@@ -19,9 +19,8 @@ export const authenticateWithToken = async (req: Request, res: Response) => {
   try {
     // Testar o token fazendo uma requisição para listar usuários
     // Isso nos dará informações do usuário autenticado
-    const userResponse = await axios.get('https://crm.rdstation.com/api/v1/users', {
+    const userResponse = await axios.get(`https://crm.rdstation.com/api/v1/users?token=${token}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -158,9 +157,8 @@ export const validateToken = async (req: Request, res: Response) => {
     const token = user.accounts[0].access_token;
     
     // Testar o token fazendo uma requisição simples
-    await axios.get('https://crm.rdstation.com/api/v1/users', {
+    await axios.get(`https://crm.rdstation.com/api/v1/users?token=${token}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
