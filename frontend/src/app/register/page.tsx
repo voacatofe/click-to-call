@@ -16,9 +16,6 @@ export default function RegisterPage() {
     text: string;
   } | null>(null);
 
-  // Debug: mostrar a variável na tela
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -38,11 +35,8 @@ export default function RegisterPage() {
       return;
     }
 
-    // Debug: verificar a URL
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const fullUrl = `${backendUrl}/auth/register`;
-    console.log('Backend URL:', backendUrl);
-    console.log('Full URL:', fullUrl);
 
     void (async () => {
       try {
@@ -54,7 +48,7 @@ export default function RegisterPage() {
           body: JSON.stringify(formData),
         });
 
-        const data = await response.json() as { message?: string };
+        const data = (await response.json()) as { message?: string };
 
         if (!response.ok) {
           throw new Error(data.message || 'Ocorreu um erro no registro.');
@@ -70,7 +64,8 @@ export default function RegisterPage() {
           window.location.href = '/login';
         }, 2000);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Erro desconhecido';
         setMessage({ type: 'error', text: errorMessage });
       } finally {
         setIsLoading(false);
@@ -88,14 +83,7 @@ export default function RegisterPage() {
           Cadastre sua empresa e seu usuário administrador.
         </p>
 
-        {/* Debug: mostrar a variável na tela */}
-        <div className="mb-4 rounded border border-yellow-400 bg-yellow-100 p-3 text-sm">
-          <strong>Debug:</strong>
-          <br />
-          NEXT_PUBLIC_BACKEND_URL: {backendUrl || 'undefined'}
-          <br />
-          URL completa seria: {backendUrl}/auth/register
-        </div>
+
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

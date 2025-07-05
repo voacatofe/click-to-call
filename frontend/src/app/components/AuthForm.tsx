@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 
+interface ApiError {
+  message: string;
+}
+
 export default function AuthForm() {
   const [token, setToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +37,7 @@ export default function AuthForm() {
         },
       );
 
-      const data = await response.json();
+      const data = (await response.json()) as ApiError;
 
       if (!response.ok) {
         throw new Error(data.message || 'Ocorreu um erro na autenticação.');
@@ -43,8 +47,9 @@ export default function AuthForm() {
         type: 'success',
         text: data.message || 'Autenticação bem-sucedida!',
       });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +97,7 @@ export default function AuthForm() {
           </ol>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6">
           <div>
             <label
               htmlFor="token"

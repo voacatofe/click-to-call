@@ -1,27 +1,29 @@
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user-auth.routes'; // Importar as novas rotas
+import userAuthRoutes from './routes/user-auth.routes';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
-const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  optionsSuccessStatus: 200,
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Backend is running' });
+// Rotas
+app.use('/auth', authRoutes);
+app.use('/auth', userAuthRoutes);
+
+// Rota de teste
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Servidor rodando!' });
 });
 
-app.use('/auth', userRoutes); // Removido o /api. O proxy cuida disso.
-app.use('/integration', authRoutes); // Removido o /api.
-
-app.listen(Number(port), '0.0.0.0', () => {
-  console.log(`[server]: Backend is running at http://localhost:${port}`);
+// Iniciar servidor
+app.listen(Number(PORT), '0.0.0.0', () => {
+  // Servidor iniciado com sucesso
+  process.stdout.write(`Servidor rodando na porta ${PORT}\n`);
 });

@@ -1,39 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../types/auth';
 
-interface AuthenticatedRequest extends Request {
-  user?: any;
-}
-
-export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Autenticação necessária',
-      message: 'Token de autenticação não fornecido ou em formato inválido.'
+export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  
+  if (!token) {
+    res.status(401).json({
+      error: 'Token não fornecido',
+      message: 'Token de autenticação é obrigatório'
     });
-  }
-
-  const token = authHeader.split(' ')[1];
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    console.error('JWT_SECRET não está configurado no ambiente.');
-    return res.status(500).json({
-      error: 'Erro de configuração do servidor',
-      message: 'A chave secreta para JWT não está configurada.'
-    });
+    return;
   }
 
   try {
-    const decoded = jwt.verify(token, secret);
-    req.user = decoded;
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      // Token secret não configurado
+      res.status(500).json({
+        error: 'Erro de configuração do servidor',
+        message: 'JWT secret não configurado'
+      });
+      return;
+    }
+
+    const decoded = jwt.verify(token, jwtSecret);
+    req.user = decoded as AuthenticatedRequest['user'];
     next();
-  } catch (error) {
-    return res.status(401).json({
-      error: 'Token inválido ou expirado',
-      message: 'Seu token de autenticação é inválido ou já expirou.'
+  } catch {
+    res.status(401).json({
+      error: 'Token inválido',
+      message: 'Token de autenticação inválido'
     });
   }
 }; 

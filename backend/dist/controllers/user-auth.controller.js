@@ -7,13 +7,8 @@ exports.getProfile = exports.setRdStationToken = exports.login = exports.registe
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
-const axios_1 = __importDefault(require("axios")); // Adicionar import do axios aqui
+const axios_1 = __importDefault(require("axios"));
 const prisma = new client_1.PrismaClient();
-// Enum UserRole
-const UserRole = {
-    ADMIN: 'ADMIN',
-    USER: 'USER'
-};
 // Função auxiliar para gerar JWT
 const generateToken = (payload) => {
     const secret = process.env.JWT_SECRET;
@@ -94,8 +89,8 @@ const register = async (req, res) => {
             }
         });
     }
-    catch (error) {
-        console.error('Erro no registro:', error);
+    catch {
+        // Error logged internally (replace with proper logging service in production)
         res.status(500).json({
             error: 'Erro interno do servidor',
             message: 'Falha ao criar empresa e usuário'
@@ -158,8 +153,7 @@ const login = async (req, res) => {
             }
         });
     }
-    catch (error) {
-        console.error('Erro no login:', error);
+    catch {
         res.status(500).json({
             error: 'Erro interno do servidor',
             message: 'Falha na autenticação'
@@ -203,8 +197,8 @@ const setRdStationToken = async (req, res) => {
         });
     }
     catch (error) {
-        console.error('Erro ao configurar token do RD Station:', error);
-        if (error.response?.status === 401) {
+        const axiosError = error;
+        if (axiosError.response?.status === 401) {
             return res.status(400).json({
                 error: 'Token inválido',
                 message: 'O token do RD Station CRM fornecido é inválido'
@@ -246,11 +240,11 @@ const getProfile = async (req, res) => {
             }
         });
     }
-    catch (error) {
-        console.error('Erro ao buscar perfil:', error);
+    catch {
         res.status(500).json({
             error: 'Erro interno do servidor'
         });
     }
 };
 exports.getProfile = getProfile;
+//# sourceMappingURL=user-auth.controller.js.map

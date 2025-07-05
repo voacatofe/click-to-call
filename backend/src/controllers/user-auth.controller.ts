@@ -2,23 +2,16 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient, Prisma } from '@prisma/client';
-import axios from 'axios'; // Adicionar import do axios aqui
+import axios from 'axios';
+import { UserRole, JWTPayload, AuthenticatedRequest } from '../types/auth';
 
 const prisma = new PrismaClient();
 
-// Enum UserRole
-const UserRole = {
-  ADMIN: 'ADMIN' as const,
-  USER: 'USER' as const
-};
-type UserRole = typeof UserRole[keyof typeof UserRole];
-
-// Interface para o payload do JWT
-interface JWTPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-  companyId: string;
+// Interface para erro do axios
+interface AxiosError {
+  response?: {
+    status: number;
+  };
 }
 
 // Função auxiliar para gerar JWT
@@ -192,9 +185,9 @@ export const login = async (req: Request, res: Response) => {
 };
 
 // Configurar token do RD Station CRM (apenas para ADMINs)
-export const setRdStationToken = async (req: Request, res: Response) => {
+export const setRdStationToken = async (req: AuthenticatedRequest, res: Response) => {
   const { token } = req.body;
-  const user = (req as any).user; // Vem do middleware de autenticação
+  const user = req.user; // Vem do middleware de autenticação
 
   if (!token) {
     return res.status(400).json({
@@ -231,10 +224,10 @@ export const setRdStationToken = async (req: Request, res: Response) => {
       message: 'Token do RD Station CRM configurado com sucesso'
     });
 
-  } catch (error: any) {
-
+  } catch (error) {
+    const axiosError = error as AxiosError;
     
-    if (error.response?.status === 401) {
+    if (axiosError.response?.status === 401) {
       return res.status(400).json({
         error: 'Token inválido',
         message: 'O token do RD Station CRM fornecido é inválido'
@@ -249,8 +242,8 @@ export const setRdStationToken = async (req: Request, res: Response) => {
 };
 
 // Obter informações do usuário autenticado
-export const getProfile = async (req: Request, res: Response) => {
-  const user = (req as any).user; // Vem do middleware de autenticação
+export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
+  const user = req.user; // Vem do middleware de autenticação
 
   try {
     const userWithCompany = await prisma.user.findUnique({
