@@ -10,10 +10,15 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
+# Copiar package.json para ter acesso aos scripts
+COPY package*.json ./
+# Instalar apenas dependências de produção
+RUN npm ci --only=production
+
 # Copiar os arquivos da compilação otimizada
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000
-CMD ["node", "server.js"] 
+CMD ["npm", "start"] 
