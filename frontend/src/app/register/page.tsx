@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
@@ -39,39 +39,43 @@ export default function RegisterPage() {
     }
 
     // Debug: verificar a URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const fullUrl = `${backendUrl}/auth/register`;
     console.log('Backend URL:', backendUrl);
     console.log('Full URL:', fullUrl);
 
-    try {
-      const response = await fetch(fullUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+    void (async () => {
+      try {
+        const response = await fetch(fullUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
 
-      const data = await response.json();
+        const data = await response.json() as { message?: string };
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Ocorreu um erro no registro.');
+        if (!response.ok) {
+          throw new Error(data.message || 'Ocorreu um erro no registro.');
+        }
+
+        setMessage({
+          type: 'success',
+          text: 'Registro bem-sucedido! Você será redirecionado para o login.',
+        });
+
+        // Opcional: Redirecionar para o login após um curto período
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        setMessage({ type: 'error', text: errorMessage });
+      } finally {
+        setIsLoading(false);
       }
-
-      setMessage({
-        type: 'success',
-        text: 'Registro bem-sucedido! Você será redirecionado para o login.',
-      });
-
-      // Opcional: Redirecionar para o login após um curto período
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
-    } finally {
-      setIsLoading(false);
-    }
+    })();
   };
 
   return (
@@ -85,9 +89,11 @@ export default function RegisterPage() {
         </p>
 
         {/* Debug: mostrar a variável na tela */}
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded text-sm">
-          <strong>Debug:</strong><br/>
-          NEXT_PUBLIC_BACKEND_URL: {backendUrl || 'undefined'}<br/>
+        <div className="mb-4 rounded border border-yellow-400 bg-yellow-100 p-3 text-sm">
+          <strong>Debug:</strong>
+          <br />
+          NEXT_PUBLIC_BACKEND_URL: {backendUrl || 'undefined'}
+          <br />
           URL completa seria: {backendUrl}/auth/register
         </div>
 
