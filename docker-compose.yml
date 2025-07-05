@@ -42,8 +42,6 @@ services:
     restart: always
     env_file:
       - .env
-    environment:
-      - PORT=${FRONTEND_PORT:-3000}
     networks:
       - app-network
     labels:

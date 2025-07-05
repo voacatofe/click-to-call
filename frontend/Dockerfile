@@ -10,12 +10,11 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Copiar package.json para ter acesso aos scripts
+# Copiar os arquivos necessários
 COPY package*.json ./
-# Instalar apenas dependências de produção
 RUN npm ci --only=production
 
-# Copiar os arquivos da compilação otimizada
+# Copiar os arquivos da build
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
