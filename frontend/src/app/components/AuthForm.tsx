@@ -23,7 +23,7 @@ export default function AuthForm() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/integration/rdstation-crm/authenticate`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/integration/rdstation-crm/authenticate`,
         {
           method: 'POST',
           headers: {

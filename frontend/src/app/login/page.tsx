@@ -3,10 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+export default function LoginPage() {
   const [formData, setFormData] = useState({
-    companyName: '',
-    name: '',
     email: '',
     password: '',
   });
@@ -26,18 +24,9 @@ export default function RegisterPage() {
     setIsLoading(true);
     setMessage(null);
 
-    if (formData.password.length < 6) {
-      setMessage({
-        type: 'error',
-        text: 'A senha deve ter pelo menos 6 caracteres.',
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
         {
           method: 'POST',
           headers: {
@@ -50,18 +39,21 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Ocorreu um erro no registro.');
+        throw new Error(data.message || 'Ocorreu um erro no login.');
       }
 
       setMessage({
         type: 'success',
-        text: 'Registro bem-sucedido! Você será redirecionado para o login.',
+        text: 'Login realizado com sucesso!',
       });
 
-      // Opcional: Redirecionar para o login após um curto período
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
+      // Armazenar o token e redirecionar
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      }
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -73,47 +65,13 @@ export default function RegisterPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6 dark:bg-gray-900">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
         <h1 className="mb-4 text-center text-2xl font-bold text-gray-900 dark:text-white">
-          Criar Nova Conta
+          Fazer Login
         </h1>
         <p className="mb-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          Cadastre sua empresa e seu usuário administrador.
+          Entre com sua conta para acessar o sistema.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="companyName"
-              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              Nome da Empresa
-            </label>
-            <input
-              type="text"
-              name="companyName"
-              id="companyName"
-              value={formData.companyName}
-              onChange={handleChange}
-              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              Seu Nome
-            </label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              required
-            />
-          </div>
           <div>
             <label
               htmlFor="email"
@@ -153,7 +111,7 @@ export default function RegisterPage() {
             className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center text-base font-medium text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none disabled:opacity-50"
             disabled={isLoading}
           >
-            {isLoading ? 'Registrando...' : 'Criar Conta'}
+            {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
         {message && (
@@ -168,15 +126,15 @@ export default function RegisterPage() {
           </div>
         )}
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          Já tem uma conta?{' '}
+          Não tem uma conta?{' '}
           <Link
-            href="/login"
+            href="/register"
             className="font-medium text-blue-600 hover:underline dark:text-blue-500"
           >
-            Faça login aqui
+            Registre-se aqui
           </Link>
         </p>
       </div>
     </div>
   );
-}
+} 
