@@ -16,6 +16,9 @@ export default function RegisterPage() {
     text: string;
   } | null>(null);
 
+  // Debug: mostrar a variável na tela
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -35,17 +38,19 @@ export default function RegisterPage() {
       return;
     }
 
+    // Debug: verificar a URL
+    const fullUrl = `${backendUrl}/auth/register`;
+    console.log('Backend URL:', backendUrl);
+    console.log('Full URL:', fullUrl);
+
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -78,6 +83,13 @@ export default function RegisterPage() {
         <p className="mb-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Cadastre sua empresa e seu usuário administrador.
         </p>
+
+        {/* Debug: mostrar a variável na tela */}
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded text-sm">
+          <strong>Debug:</strong><br/>
+          NEXT_PUBLIC_BACKEND_URL: {backendUrl || 'undefined'}<br/>
+          URL completa seria: {backendUrl}/auth/register
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
