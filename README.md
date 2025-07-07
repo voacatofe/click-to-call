@@ -1,75 +1,204 @@
-# Click-to-Call SaaS Platform
+# Click-to-Call System
 
-Este é o repositório para a plataforma SaaS de Click-to-Call, integrada com o RD Station CRM. O projeto é um monorepo gerenciado com Turborepo e pnpm.
+Sistema completo de Click-to-Call com frontend Next.js, backend Express.js e servidor Asterisk para WebRTC.
 
-## Estrutura do Projeto
+## 🏗️ Arquitetura
 
-Este é um monorepo gerenciado com pnpm e Turborepo.
+- **Frontend**: Next.js com TypeScript e Tailwind CSS
+- **Backend**: Express.js com TypeScript
+- **VoIP**: Asterisk 18 com suporte WebRTC
+- **Database**: Supabase (PostgreSQL)
+- **CRM**: Integração com RD Station CRM API v1
 
-- `apps/api`: Backend em Node.js (Express)
-- `apps/web`: Frontend em React (Next.js)
-- `packages/ui`: Componentes React compartilhados
-- `packages/config`: Configurações de ESLint e TSConfig
+## 📋 Pré-requisitos
 
-## Desenvolvimento Local
+- Docker e Docker Compose
+- Node.js 18+ (para desenvolvimento local)
+- pnpm (gerenciador de pacotes)
 
-### Pré-requisitos
-- Node.js >= 18
-- pnpm
-- Docker
+## 🚀 Execução Rápida com Docker
 
-### Instalação e Execução
-1.  **Clone o repositório.**
-2.  **Instale as dependências** na raiz do projeto:
-    ```bash
-    pnpm install
-    ```
-3.  **Configure as variáveis de ambiente**:
-    Copie os arquivos `.env.example` para `.env` em `apps/api` e `apps/web` e preencha com suas credenciais.
-4.  **Inicie os serviços** com Docker Compose:
-    ```bash
-    docker-compose up --build
-    ```
-    - O frontend estará disponível em `http://localhost:3000`.
-    - O backend estará disponível em `http://localhost:3001`.
+### 1. Configuração das Variáveis de Ambiente
 
-## CI/CD
+Copie os arquivos de exemplo e configure suas credenciais:
 
-O pipeline de Integração Contínua (CI) é gerenciado pelo GitHub Actions e está definido em `.github/workflows/ci.yml`. Ele é acionado a cada `push` ou `pull request` para a branch `main` e executa as seguintes etapas:
-- Instalação de dependências
-- Geração de tipos do Supabase
-- Lint
-- Testes
-- Build de todas as aplicações e pacotes
-
-## Uso da Supabase CLI
-
-A CLI do Supabase é utilizada para gerenciar o ambiente de banco de dados local (opcional) e para gerar tipos TypeScript a partir do schema do seu banco de dados.
-
-### Instalação
 ```bash
-npm install -g supabase
+# Configurações da API
+cp apps/api/.env.example apps/api/.env
+
+# Configurações do Frontend  
+cp apps/web/.env.example apps/web/.env
+
+# Configurações globais (se necessário)
+cp .env.example .env
 ```
 
-### Login
+### 2. Configurar Credenciais
+
+Edite os arquivos `.env` com suas credenciais reais:
+
+**apps/api/.env**: Configure Supabase, RD Station CRM e JWT secrets
+**apps/web/.env**: Configure URLs da API e configurações públicas
+
+### 3. Executar com Docker
+
 ```bash
-supabase login
+# Construir e executar todos os serviços
+docker-compose up --build
+
+# Ou executar em background
+docker-compose up -d --build
 ```
 
-### Vinculando o Projeto
-Vincule seu projeto local ao seu projeto Supabase remoto:
+### 4. Gerar Certificados TLS (se necessário)
+
 ```bash
-supabase link --project-ref <your-project-id>
+# Gerar certificados para WSS (apenas se não existirem)
+docker-compose --profile tools run --rm cert-generator
 ```
 
-### Gerando Tipos
-Para gerar os tipos TypeScript a partir do seu schema de banco de dados:
+## 🔧 Desenvolvimento Local
+
+### 1. Instalar Dependências
+
 ```bash
-supabase gen types typescript --project-id <your-project-id> --schema public > apps/web/types/supabase.ts
+# Instalar dependências do monorepo
+pnpm install
 ```
 
-### Migrações
-Para aplicar migrações do seu diretório `supabase/migrations` para o banco de dados remoto:
+### 2. Executar em Modo Desenvolvimento
+
 ```bash
-supabase db push
-``` 
+# Executar todos os serviços em desenvolvimento
+pnpm dev
+
+# Ou executar individualmente:
+pnpm --filter api dev     # Backend na porta 3001
+pnpm --filter web dev     # Frontend na porta 3000
+```
+
+### 3. Executar Apenas o Asterisk
+
+```bash
+# Executar apenas o Asterisk com Docker
+docker-compose up asterisk
+```
+
+## 🌐 Acesso aos Serviços
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/api/health
+- **Asterisk HTTP**: http://localhost:8088
+- **Asterisk WSS**: wss://localhost:8089
+
+## 📱 Configuração do Softphone
+
+### Credenciais Padrão
+
+- **Usuário**: agent-1001
+- **Senha**: changeme
+- **Realm**: clicktocall.local
+- **Servidor WSS**: wss://localhost:8089
+
+### Teste de Conexão WebRTC
+
+1. Acesse o frontend em http://localhost:3000
+2. O softphone deve conectar automaticamente
+3. Teste realizando uma chamada
+
+## 🔍 Verificação de Funcionamento
+
+### Health Checks
+
+```bash
+# Verificar API
+curl http://localhost:3001/api/health
+
+# Verificar Frontend
+curl http://localhost:3000
+
+# Verificar Asterisk
+docker exec asterisk-clicktocall asterisk -rx "core show version"
+```
+
+### Logs dos Serviços
+
+```bash
+# Ver logs de todos os serviços
+docker-compose logs -f
+
+# Ver logs específicos
+docker-compose logs -f api
+docker-compose logs -f web  
+docker-compose logs -f asterisk
+```
+
+## 🐛 Troubleshooting
+
+### Problemas Comuns
+
+1. **Erro de certificados WSS**:
+   ```bash
+   docker-compose --profile tools run --rm cert-generator
+   ```
+
+2. **Módulo SRTP não encontrado**:
+   - Verificar se `asterisk-srtp` está instalado no Dockerfile
+
+3. **Conexão recusada entre serviços**:
+   - Verificar se as redes Docker estão configuradas
+   - Usar `asterisk` ao invés de `localhost` nas configurações da API
+
+4. **Problemas de permissão Asterisk**:
+   ```bash
+   docker exec asterisk-clicktocall chown -R asterisk:asterisk /etc/asterisk
+   ```
+
+### Verificação de Configurações
+
+```bash
+# Verificar configuração PJSIP
+docker exec asterisk-clicktocall asterisk -rx "pjsip show transports"
+
+# Verificar endpoints WebRTC
+docker exec asterisk-clicktocall asterisk -rx "pjsip show endpoints"
+
+# Verificar módulos carregados
+docker exec asterisk-clicktocall asterisk -rx "module show like srtp"
+```
+
+## 📁 Estrutura do Projeto
+
+```
+click-to-call/
+├── apps/
+│   ├── api/                 # Backend Express.js
+│   │   ├── src/
+│   │   ├── .env            # Configurações da API
+│   │   └── Dockerfile
+│   └── web/                # Frontend Next.js  
+│       ├── src/
+│       ├── .env            # Configurações do Frontend
+│       └── Dockerfile
+├── asterisk/               # Servidor VoIP
+│   ├── etc/               # Configurações do Asterisk
+│   ├── Dockerfile
+│   └── run.sh
+├── docker-compose.yml     # Orquestração dos serviços
+└── README.md
+```
+
+## 🔐 Segurança
+
+- Altere todas as senhas padrão em produção
+- Configure certificados SSL válidos para WSS
+- Use variáveis de ambiente para credenciais sensíveis
+- Configure firewall adequadamente para portas do Asterisk
+
+## 📚 Documentação Adicional
+
+- [Configuração do Asterisk](./asterisk/README.md)
+- [API Documentation](./apps/api/README.md)
+- [Frontend Guide](./apps/web/README.md)
+- [Troubleshooting Guide](./docs/troubleshooting.md) 

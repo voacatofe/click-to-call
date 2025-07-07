@@ -1,17 +1,26 @@
 {
-  "name": "click-to-call",
+  "name": "click-to-call-monorepo",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "docker:up": "docker-compose up --build -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --remove-orphans && docker system prune -f",
+    "setup": "pwsh -ExecutionPolicy Bypass ./scripts/dev.ps1 setup",
+    "start": "pwsh -ExecutionPolicy Bypass ./scripts/dev.ps1 start",
+    "stop": "pwsh -ExecutionPolicy Bypass ./scripts/dev.ps1 stop",
+    "status": "pwsh -ExecutionPolicy Bypass ./scripts/dev.ps1 status",
+    "clean": "pwsh -ExecutionPolicy Bypass ./scripts/dev.ps1 clean"
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
+    "prettier": "^3.0.0",
     "turbo": "latest"
   },
-  "packageManager": "pnpm@8.6.10",
+  "packageManager": "pnpm@8.15.6",
   "engines": {
     "node": ">=18"
   }

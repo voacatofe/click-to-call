@@ -11,6 +11,22 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
+    },
+    env: {
+      browser: true,
+      es6: true,
+      node: true
+    }
+  }
 ];
 
 export default eslintConfig;

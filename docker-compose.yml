@@ -1,22 +1,117 @@
 version: '3.8'
 
 services:
+  # =============================================================================
+  # Certificate Generator (Run once to generate TLS certificates)
+  # =============================================================================
+  cert-generator:
+    image: alpine:3.18
+    profiles: ["tools"]  # Only run when explicitly specified
+    volumes:
+      - ./asterisk/certs:/certs
+    command: >
+      sh -c "apk add --no-cache openssl &&
+             if [ ! -f /certs/privkey.pem ]; then
+               openssl req -x509 -newkey rsa:2048 -nodes \
+                 -keyout /certs/privkey.pem \
+                 -out /certs/fullchain.pem \
+                 -days 365 -subj '/CN=localhost';
+               echo 'Certificates generated successfully';
+             else
+               echo 'Certificates already exist';
+             fi"
+
+  # =============================================================================
+  # Asterisk VoIP Server
+  # =============================================================================
+  asterisk:
+    build:
+      context: ./asterisk
+    container_name: asterisk-clicktocall
+    restart: unless-stopped
+    network_mode: host  # Required for RTP media streaming
+    volumes:
+      - ./asterisk/etc:/etc/asterisk
+      - ./asterisk/sounds:/var/lib/asterisk/sounds
+      - ./asterisk/recordings:/var/spool/asterisk/monitor
+      - ./asterisk/certs:/etc/asterisk/keys
+    environment:
+      - ASTERISK_UID=1000
+      - ASTERISK_GID=1000
+    healthcheck:
+      test: ["CMD", "asterisk", "-rx", "core show version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # Backend API
+  # =============================================================================
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    container_name: clicktocall-api
+    restart: unless-stopped
     ports:
       - "3001:3001"
+    environment:
+      - ASTERISK_HOST=asterisk
     env_file:
       - ./apps/api/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      asterisk:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - clicktocall-network
 
+  # =============================================================================
+  # Frontend Web Application
+  # =============================================================================
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+    container_name: clicktocall-web
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    depends_on:
-      - api
     env_file:
-      - ./apps/web/.env 
+      - ./apps/web/.env
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - clicktocall-network
+
+# =============================================================================
+# Networks Configuration
+# =============================================================================
+networks:
+  clicktocall-network:
+    driver: bridge
+    name: clicktocall-network
+
+# =============================================================================
+# Volumes Configuration
+# =============================================================================
+volumes:
+  asterisk-recordings:
+    driver: local
+  asterisk-logs:
+    driver: local 

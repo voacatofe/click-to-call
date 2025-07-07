@@ -1,29 +1,35 @@
-# Usar uma base Alpine Linux, que é leve e segura
 FROM alpine:3.18
+
 LABEL maintainer="Seu Nome <seu-email@example.com>"
 
-# Copiar os arquivos de configuração que criamos para o lugar certo no contêiner
+# Install Asterisk with SRTP support, openssl, and other dependencies
+RUN apk add --no-cache --update \
+    asterisk=18.24.3-r1 \
+    asterisk-srtp=18.24.3-r1 \
+    openssl \
+    tini
+
+# Generate self-signed TLS certificate for WSS
+RUN mkdir -p /etc/asterisk/keys && \
+    openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/asterisk/keys/asterisk.pem -out /etc/asterisk/keys/asterisk.pem -days 3650 -subj "/CN=clicktocall.local" && \
+    chown asterisk:asterisk /etc/asterisk/keys/asterisk.pem
+
+# Copy configuration files
 COPY etc/ /etc/asterisk/
 
-# Copiar o script de inicialização
+# Copy the startup script
 COPY run.sh /
 
-# Instalar o Asterisk pré-compilado do repositório do Alpine
-# Isso é muito mais rápido e confiável do que compilar do zero
-RUN apk add --no-cache --update asterisk tini \
- && chmod +x /run.sh \
- && chown -R asterisk:asterisk /etc/asterisk \
- && chown asterisk:asterisk /run.sh
+# Permissions
+RUN chmod +x /run.sh && \
+    chown -R asterisk:asterisk /etc/asterisk/ && \
+    chown asterisk:asterisk /run.sh
 
-# Mudar para o usuário 'asterisk' para maior segurança
-USER asterisk:asterisk
+# Expose necessary ports
+EXPOSE 8088 8089 5038
 
-# Usar 'tini' para gerenciar o processo do Asterisk corretamente
+# Define o ponto de entrada para o container
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Comando para iniciar o servidor
-CMD ["/run.sh"]
-
-# Verificação de saúde para o Docker saber se o contêiner está funcionando
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ["sh", "-c", "asterisk -rx 'core show uptime'"] 
+# Comando padrão para iniciar o Asterisk
+CMD ["/run.sh"] 

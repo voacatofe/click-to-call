@@ -12,7 +12,8 @@ class AsteriskService extends EventEmitter {
   }
 
   private initialize() {
-    const host = process.env.ASTERISK_HOST || 'localhost';
+    // No Docker, 'host.docker.internal' aponta para a máquina host
+    const host = process.env.DOCKER_ENV ? 'host.docker.internal' : process.env.ASTERISK_HOST || 'localhost';
     const port = Number(process.env.ASTERISK_AMI_PORT ?? 5038);
     const user = process.env.ASTERISK_AMI_USER || 'admin';
     const password = process.env.ASTERISK_AMI_PASSWORD || 'secret';

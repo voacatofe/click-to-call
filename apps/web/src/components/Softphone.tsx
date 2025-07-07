@@ -18,13 +18,13 @@ export const Softphone = () => {
       return;
     }
 
-    const socket = new JsSIP.WebSocketInterface(`wss://${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}:8089`);
+    const socket = new JsSIP.WebSocketInterface(`wss://${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}:${process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089'}/ws`);
     // Removendo a tipagem explícita para evitar o erro do linter
     const configuration = {
       sockets: [socket], // O cast para Socket pode ser necessário se o linter reclamar
-      uri: `sip:${agentId}@${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}`,
+      uri: `sip:${agentId}@clicktocall.local`, // Usar o mesmo realm do pjsip.conf
       password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
-      register: true,
+      register: true
     };
 
     const ua = new JsSIP.UA(configuration);
@@ -85,7 +85,7 @@ export const Softphone = () => {
         },
         mediaConstraints: { audio: true, video: false },
       };
-      uaRef.current.call(`sip:${destination}@${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}`, options);
+      uaRef.current.call(`sip:${destination}@clicktocall.local`, options);
     }
   };
 

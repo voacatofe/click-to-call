@@ -8,15 +8,29 @@ RUN npm i -g pnpm && pnpm install --filter api --prod
 # 2. Builder
 FROM node:18-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/ .
-COPY . .
-RUN npm i -g pnpm && pnpm turbo run build --filter=api
+COPY --from=deps /app/ . 
+COPY turbo.json turbo.json
+COPY pnpm-workspace.yaml pnpm-workspace.yaml
+COPY apps/api/ ./apps/api/
+RUN npm i -g pnpm && pnpm install && pnpm turbo run build --filter=api
 
 # 3. Runner
 FROM node:18-alpine AS runner
 WORKDIR /app
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+ENV NODE_ENV=production
+ENV DOCKER_ENV=true
 
-CMD ["node", "dist/index.js"] 
+# Copia todos os manifestos do monorepo
+COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY turbo.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Instala TODAS as dependências de produção do monorepo
+RUN npm i -g pnpm && pnpm install --prod
+
+# Copia o código compilado da API
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+
+CMD ["node", "apps/api/dist/index.js"] 
