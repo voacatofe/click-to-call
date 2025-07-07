@@ -1,11 +1,79 @@
 # Task ID: 2
-# Title: RD Station API Integration Setup
+# Title: Configure Easypanel Services and Automate Deployment
 # Status: pending
 # Dependencies: 1
-# Priority: medium
-# Description: Implement OAuth 2.0 authentication and basic API integration with RD Station CRM.
+# Priority: high
+# Description: Set up Easypanel to manage backend, frontend, and database as separate services, map environment variables, define health checks, plan persistent storage, and automate deployment via container registry webhook.
 # Details:
-Register application in RD Station developer portal. Implement OAuth 2.0 flow for authentication. Create backend endpoints to fetch contacts and deals, and to create activities/notes. Use RD Station API documentation for endpoints and data models. Store tokens securely.
+1. **Create Services in Easypanel:**
+   - Log in to Easypanel and create a new project.
+   - Add three services: backend (Node/Express + Prisma), frontend (React), and database (e.g., PostgreSQL).
+   - For each service, specify the Docker image from your registry and configure the necessary environment variables using the Easypanel interface.
+2. **Map Environment Variables:**
+   - Import environment variables from your .env files into Easypanel for each service.
+   - Ensure sensitive variables (e.g., database credentials, API keys) are securely managed.
+3. **Define Health Checks:**
+   - For backend and frontend, configure HTTP health checks (e.g., `/health` endpoint).
+   - For the database, use a simple TCP check on the database port.
+4. **Plan Persistent Storage:**
+   - For the database, create a persistent volume in Easypanel to ensure data is not lost on service restarts.
+   - For backend and frontend, use bind mounts or volumes as needed for configuration or static files.
+   - Configure mounts in Easypanel: use volumes for database data, and bind mounts for configuration or shared files between containers if required[4].
+5. **Automate Deployment via Webhook:**
+   - Set up a webhook in your container registry (e.g., Docker Hub, GitHub Container Registry) to trigger Easypanel to pull and deploy new images automatically when they are pushed.
+   - Configure Easypanel to listen for webhook events and update the relevant service.
+6. **Verify Configuration:**
+   - Ensure all environment variables are correctly mapped and health checks are functioning.
+   - Test persistent storage by restarting services and verifying data retention.
+   - Trigger a new image push and confirm that the deployment is automatically updated.
 
 # Test Strategy:
-Test authentication flow and API calls with mock data. Verify contact retrieval and activity creation.
+1. **Service Health Checks:**
+   - Verify that health checks for backend, frontend, and database are returning expected results.
+2. **Environment Variables:**
+   - Confirm that all environment variables are correctly loaded and accessible within each service.
+3. **Persistent Storage:**
+   - Restart the database service and ensure data persists.
+   - For backend and frontend, check that any mounted files or configurations remain intact after restarts.
+4. **Automated Deployment:**
+   - Push a new image to the registry and confirm that Easypanel automatically updates the corresponding service.
+5. **End-to-End Testing:**
+   - Access the frontend and backend endpoints to ensure they are operational and communicating with the database as expected.
+
+# Subtasks:
+## 1. Create Backend and Frontend Services in Easypanel [pending]
+### Dependencies: None
+### Description: Set up separate backend and frontend services within Easypanel, ensuring each service is configured with the appropriate runtime and network settings.
+### Details:
+Navigate to the 'Applications' tab in Easypanel, click 'New Application', and configure both backend and frontend services as needed for your project.
+
+## 2. Map Environment Variables for Supabase, Twilio, and RDCRM [pending]
+### Dependencies: 2.1
+### Description: Configure environment variables for third-party integrations (Supabase, Twilio, RDCRM) in each relevant service to enable secure and correct operation.
+### Details:
+Within each service's configuration, add the required environment variables (API keys, secrets, endpoints) for Supabase, Twilio, and RDCRM.
+
+## 3. Define Health Checks and Enable Auto-Restart [pending]
+### Dependencies: 2.1
+### Description: Set up health check endpoints and configure auto-restart policies to ensure service reliability and automatic recovery from failures.
+### Details:
+Specify health check URLs or commands in the service settings and enable auto-restart options as supported by Easypanel.
+
+## 4. Configure Persistent Storage for Temporary Files and Logs [pending]
+### Dependencies: 2.1
+### Description: Set up persistent volumes for storing temporary files and logs to ensure data is retained across service restarts and deployments.
+### Details:
+In the service configuration, define and mount volumes for directories requiring persistence, such as uploads or log folders.
+
+## 5. Set Up Deployment Webhook from Container Registry [pending]
+### Dependencies: 2.1
+### Description: Automate deployments by configuring a webhook that triggers service updates in Easypanel when new container images are pushed to the registry.
+### Details:
+Obtain the webhook URL from Easypanel and configure it in your container registry to notify Easypanel of new image versions.
+
+## 6. Verify and Document Configuration in Easypanel [pending]
+### Dependencies: 2.2, 2.3, 2.4, 2.5
+### Description: Review all service configurations, test deployments, and document the setup within the Easypanel dashboard for future reference and team onboarding.
+### Details:
+Check that all services are running as expected, environment variables are set, health checks pass, storage is persistent, and deployment automation works. Document the configuration steps and settings.
+

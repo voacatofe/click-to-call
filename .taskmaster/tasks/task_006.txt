@@ -1,55 +1,55 @@
 # Task ID: 6
-# Title: Secure Call Recording Storage and Compliance
+# Title: Implement Automatic Call Logging in CRM via Twilio Webhook and RD Station API
 # Status: pending
-# Dependencies: 3
+# Dependencies: 3, 4
 # Priority: medium
-# Description: Implement secure storage and management of call recordings with compliance to LGPD.
+# Description: Develop a backend service that listens for Twilio call webhooks, retrieves call metadata, and logs activities or notes in RD Station via API, ensuring retries and idempotency. Include comprehensive end-to-end tests.
 # Details:
-Store call recordings in encrypted cloud storage (e.g., Amazon S3). Generate secure, time-limited access URLs. Implement data retention and deletion policies. Ensure compliance with LGPD for personal data.
+1. Set up an HTTP endpoint to receive Twilio webhook events for call status updates (e.g., completed, failed). Validate incoming requests to ensure authenticity (e.g., Twilio signature verification). 2. Upon receiving a webhook, extract relevant call metadata (call SID, status, duration, participants, timestamps, etc.). 3. Implement logic to fetch any additional metadata from Twilio if needed (using Twilio REST API). 4. Use the RD Station API to create or update an activity/note associated with the relevant contact or deal, mapping Twilio call data to RD Station fields. 5. Ensure idempotency by tracking processed webhook events (e.g., via call SID or a unique event ID) to prevent duplicate CRM entries. 6. Implement a robust retry mechanism for both Twilio and RD Station API interactions, handling transient failures and respecting rate limits. 7. Log all processing steps and errors for observability. 8. Document the integration flow and provide configuration options for webhook URLs, API credentials, and retry policies.
 
 # Test Strategy:
-Test recording upload, download, and deletion. Verify access controls and compliance checks.
+- Write unit tests for webhook parsing, Twilio signature validation, and RD Station API payload construction. - Mock Twilio and RD Station APIs to simulate various scenarios (success, failure, duplicate events, network errors). - Implement end-to-end tests that trigger a simulated Twilio webhook, verify correct metadata extraction, and confirm that the expected activity/note appears in RD Station. - Test idempotency by sending duplicate webhook events and ensuring only one CRM entry is created. - Validate retry logic by simulating transient API failures and confirming successful eventual delivery.
 
 # Subtasks:
-## 1. Encrypted Cloud Storage Setup [pending]
+## 1. Configure Webhook Endpoint /twilio/log-call [pending]
 ### Dependencies: None
-### Description: Configure and provision secure, encrypted cloud storage for call recordings, ensuring compliance with industry standards and best practices.
+### Description: Set up an HTTP POST endpoint at /twilio/log-call to receive webhook events from Twilio.
 ### Details:
-Select a cloud provider supporting end-to-end encryption and data integrity checks. Set up storage buckets or containers with encryption at rest and in transit. Document encryption keys management procedures.
+Implement the endpoint using your web framework of choice, ensuring it can parse incoming requests from Twilio and respond with the appropriate status code as quickly as possible to avoid timeouts.[5][3]
 
-## 2. Recording Upload Implementation [pending]
+## 2. Validate Twilio Signature [pending]
 ### Dependencies: 6.1
-### Description: Develop and integrate the logic to securely upload call recordings to the encrypted cloud storage, ensuring data integrity and reliability.
+### Description: Implement logic to verify the authenticity of incoming webhook requests using Twilio's signature validation.
 ### Details:
-Implement upload APIs or SDKs, validate checksums during upload, and handle upload errors or retries. Ensure uploads are logged for audit purposes.
+Extract the X-Twilio-Signature header and validate it against the request body and your Twilio Auth Token to ensure the request is genuinely from Twilio.[5]
 
-## 3. Time-Limited URL Generation [pending]
+## 3. Extract Metadata and Map to RD CRM Model [pending]
 ### Dependencies: 6.2
-### Description: Implement functionality to generate secure, time-limited URLs for accessing stored call recordings.
+### Description: Parse the webhook payload to extract relevant call metadata and map it to the RD Station CRM data model.
 ### Details:
-Use cloud provider mechanisms (e.g., signed URLs) to allow temporary, controlled access to recordings. Ensure URLs expire after the defined period and cannot be reused.
+Identify required fields (e.g., call SID, phone numbers, timestamps) and transform them into the format expected by the RD Station API.[4][2]
 
-## 4. Data Retention Policy Enforcement [pending]
-### Dependencies: 6.2
-### Description: Automate enforcement of data retention policies to ensure recordings are stored only for the legally required period.
+## 4. Implement Idempotency via Call SID in Supabase [pending]
+### Dependencies: 6.3
+### Description: Ensure that each call is processed only once by storing and checking the Twilio Call SID in Supabase.
 ### Details:
-Configure lifecycle management rules in cloud storage to automatically delete or archive recordings after the retention period. Document retention schedules and exceptions.
+Before processing, check if the Call SID already exists in Supabase. If it does, skip processing to prevent duplicate CRM entries.
 
-## 5. Deletion Logic Implementation [pending]
+## 5. Integrate RD CRM API with Retries and Backoff [pending]
 ### Dependencies: 6.4
-### Description: Develop and test secure deletion logic for call recordings, ensuring compliance with data protection regulations.
+### Description: Send the mapped data to the RD Station CRM API, implementing retry logic with exponential backoff for transient failures.
 ### Details:
-Implement deletion workflows that securely erase recordings from storage, including metadata and backups. Log all deletion actions for auditability.
+Use the RD Station API to create tasks or notes. On failure, retry the request with increasing delays, handling rate limits and network errors gracefully.[2]
 
-## 6. Compliance Checks (e.g., LGPD) [pending]
-### Dependencies: 6.4, 6.5
-### Description: Review and validate that all storage, access, and deletion processes comply with relevant legal and regulatory requirements such as LGPD.
+## 6. Logging, Monitoring, and Failure Alerts [pending]
+### Dependencies: 6.5
+### Description: Implement robust logging of all webhook events, API interactions, and errors. Set up monitoring and alerting for failures.
 ### Details:
-Conduct compliance audits, document findings, and address any gaps. Ensure processes support data subject rights (e.g., right to erasure, access logs).
+Log incoming requests, processing steps, and errors for audit and debugging. Integrate with monitoring tools to alert on repeated failures or anomalies.[5]
 
-## 7. Access Control Validation [pending]
-### Dependencies: 6.3, 6.6
-### Description: Test and validate access controls to ensure only authorized users can access, download, or manage call recordings.
+## 7. Documentation and End-to-End Testing [pending]
+### Dependencies: None
+### Description: Document the entire integration process and develop end-to-end tests to validate all logic and error handling.
 ### Details:
-Review and test role-based access controls, audit access logs, and perform penetration testing to identify and remediate vulnerabilities.
+Provide clear setup, usage, and troubleshooting documentation. Write automated tests simulating Twilio webhooks and verifying correct CRM updates and idempotency.
 

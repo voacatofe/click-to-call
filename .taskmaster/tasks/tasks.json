@@ -3,147 +3,1007 @@
     "tasks": [
       {
         "id": 1,
-        "title": "Setup Project Repository and Initial Stack",
-        "description": "Initialize project repository with Node.js/TypeScript backend and React frontend, set up CI/CD pipeline, and define initial project structure. This now includes the Docker and Easypanel production environment setup.",
-        "details": "Create a new GitHub repository. Initialize with Node.js/TypeScript for backend (using Express), React for frontend. Set up GitHub Actions for CI/CD. Configure linting, testing, and code formatting. Includes docker-compose.yml and Dockerfiles for production deployment.",
-        "testStrategy": "Verify repository setup by running initial linting and test scripts. Ensure CI/CD pipeline triggers on push. Confirm successful deployment to Easypanel.",
-        "priority": "medium",
-        "dependencies": [],
+        "title": "Set Up Docker Infrastructure and CI for Backend and Frontend",
+        "description": "Create a monorepo using Turborepo and pnpm workspaces, including turbo.json, pnpm-workspace.yaml, and a shared config package. Create Dockerfiles for Node/Express backend (without Prisma) and React frontend, a docker-compose.yml for local development (without a local database), and configure GitHub Actions to build and push images to a Docker registry. Use Supabase (paid plan) as the database provider. Provide .env.example files with Supabase-related environment variables. Document usage of Supabase CLI for local development, migrations, and seeding. Ensure CI generates TypeScript types from Supabase schema. The CI pipeline must use 'turbo run build --filter=...' to build images for each app.",
         "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "1. Set up Turborepo and pnpm workspaces:\n   - Create turbo.json and pnpm-workspace.yaml at the root.\n   - Add a shared config package in packages/config.\n2. Create a Dockerfile for the backend (Node/Express, no Prisma):\n   - Use an official Node.js base image.\n   - Copy source code, install dependencies, and build the app.\n   - Set up the entrypoint for the backend server.\n   - Health-check scripts should verify remote Supabase connection.\n   - No Prisma installation or commands required.\n3. Create a Dockerfile for the frontend (React):\n   - Use a Node.js image for build, then optionally a lightweight web server (e.g., nginx) for serving static files.\n   - Copy source code, install dependencies, build the React app, and configure the server to serve the build output.\n4. Write a docker-compose.yml to orchestrate backend and frontend for local development (remove any local 'db' service).\n   - Define only backend and frontend services, networks, and volumes as needed.\n   - Map ports for easy access.\n5. Prepare .env.example files for both backend and frontend, listing all required environment variables with placeholder values. For backend, include:\n   - SUPABASE_URL\n   - SUPABASE_ANON_KEY\n   - SUPABASE_SERVICE_ROLE_KEY\n   - DATABASE_URL (Supabase connection string with sslmode=require)\n   - SUPABASE_PROJECT_ID (for type generation)\n6. Configure GitHub Actions workflows:\n   - Set up jobs to build Docker images for backend and frontend on push to main or release branches.\n   - Authenticate with Docker Registry or GitHub Container Registry (GHCR).\n   - (Optional) Before building backend image, run `supabase db push` (Supabase CLI) to apply SQL migrations from `supabase/migrations`.\n   - Run `supabase gen types typescript --project-id <env SUPABASE_PROJECT_ID> > src/types/supabase.ts` in CI to generate TypeScript types from Supabase schema.\n   - Push built images with appropriate tags (e.g., commit SHA, latest).\n   - Use secrets for registry credentials and Supabase connection info.\n   - Use 'turbo run build --filter=...' to build images for each app.\n7. Document usage instructions in the repository README, including:\n   - How to build, run, and configure the containers locally and via CI.\n   - How to use the Supabase CLI (`supabase start`) for local development and seeding (optional, since production uses remote Supabase).\n   - How to apply migrations and generate types using the Supabase CLI.",
+        "testStrategy": "- Build both Docker images locally and verify containers start without errors.\n- Use docker-compose up to ensure backend and frontend services start and communicate as expected (no local db service).\n- Check that environment variables are correctly loaded from .env files, especially Supabase credentials.\n- Trigger GitHub Actions workflows and confirm successful build and push of images to the registry.\n- Ensure CI pipeline runs `supabase db push` (optional) to apply migrations from `supabase/migrations`.\n- Ensure CI pipeline runs `supabase gen types typescript --project-id <env SUPABASE_PROJECT_ID> > src/types/supabase.ts` and that generated types are up to date.\n- Pull images from the registry and run them independently to verify they function as expected with remote Supabase.\n- Review .env.example files for completeness and accuracy, including all Supabase variables.\n- Confirm that 'turbo run build --filter=...' is used in CI to build images for each app.",
         "subtasks": [
-          { "id": 1, "title": "Create Project Repository", "status": "done", "dependencies": [] },
-          { "id": 2, "title": "Define Folder Structure", "status": "done", "dependencies": [1] },
-          { "id": 3, "title": "Initialize Backend Stack", "status": "done", "dependencies": [2] },
-          { "id": 4, "title": "Initialize Frontend Stack", "status": "done", "dependencies": [2] },
-          { "id": 5, "title": "Configure Linting and Testing", "status": "done", "dependencies": [3, 4] },
-          { "id": 6, "title": "Set Up CI/CD Pipeline", "status": "done", "dependencies": [5] }
+          {
+            "id": 1,
+            "title": "Setup Turborepo & pnpm workspaces",
+            "description": "Criar turbo.json, pnpm-workspace.yaml e a pasta packages/config",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create Backend Dockerfile",
+            "description": "Develop a Dockerfile for the backend service, specifying the base image, dependencies, build steps, and runtime configuration.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Ensure the Dockerfile supports multi-stage builds if needed, exposes the correct ports, and is optimized for production.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Frontend Dockerfile",
+            "description": "Develop a Dockerfile for the frontend service, detailing the build process, static asset handling, and runtime environment.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Include steps for dependency installation, building the frontend, and serving the application (e.g., with nginx or node).",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Write docker-compose.yml",
+            "description": "Define a docker-compose.yml file to orchestrate backend, frontend, and Supabase services, including networking and dependencies.",
+            "status": "done",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Configure service healthchecks, environment variables, volumes, and inter-service dependencies as needed for local development and CI.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Generate .env.example Files",
+            "description": "Create .env.example files for backend, frontend, and docker-compose, listing all required environment variables with placeholder values.",
+            "status": "done",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Ensure all sensitive values are omitted and document the purpose of each variable for developers.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Configure GitHub Actions Workflow",
+            "description": "Set up a GitHub Actions workflow to build, test, and deploy Docker containers, and run Supabase CLI commands as part of CI/CD.",
+            "status": "done",
+            "dependencies": [
+              1,
+              4,
+              5
+            ],
+            "details": "Include steps for checking out code, building images, running tests, pushing images, and deploying Supabase migrations or functions using the setup-cli action[1][3][5].",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Document Supabase CLI Usage",
+            "description": "Write documentation on how to use the Supabase CLI for local development, migrations, and CI/CD integration.",
+            "status": "done",
+            "dependencies": [
+              1,
+              6
+            ],
+            "details": "Cover installation, authentication, common commands, and integration points with the workflow[1][3][5].",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement TypeScript Type Generation in CI",
+            "description": "Automate the generation of TypeScript types from Supabase schemas as part of the CI pipeline.",
+            "status": "done",
+            "dependencies": [
+              1,
+              6,
+              7
+            ],
+            "details": "Add steps to the workflow to run Supabase type generation commands and validate that generated types are up to date.",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Write README Instructions",
+            "description": "Draft comprehensive README instructions covering setup, environment configuration, Docker usage, CI/CD, and Supabase integration.",
+            "status": "done",
+            "dependencies": [
+              1,
+              5,
+              7,
+              8
+            ],
+            "details": "Include sections for prerequisites, local development, deployment, troubleshooting, and links to further documentation.",
+            "testStrategy": ""
+          }
         ]
       },
       {
         "id": 2,
-        "title": "RD Station API Integration Setup",
-        "description": "Implement OAuth 2.0 authentication and basic API integration with RD Station CRM.",
-        "details": "Register application in RD Station developer portal. Implement OAuth 2.0 flow for authentication. Create backend endpoints to fetch contacts and deals, and to create activities/notes. Store tokens securely.",
-        "testStrategy": "Test authentication flow and API calls with mock data. Verify contact retrieval and activity creation.",
-        "priority": "medium",
-        "dependencies": [1],
-        "status": "in-progress",
+        "title": "Configure Easypanel Services and Automate Deployment",
+        "description": "Configure Easypanel to manage backend, frontend, and Asterisk as separate services. Detail the production deployment plan: 1) Add a CI/CD step (GitHub Actions) to build and publish the 'clicktocall-asterisk' image to the container registry; 2) Create a new 'asterisk' service in Easypanel using the published image; 3) Configure required ports for Asterisk (including SIP and RTP, such as 5060/udp and 10000-20000/udp); 4) Update the 'api' service environment variables so ASTERISK_HOST points to the internal Easypanel service name for Asterisk. Also, map environment variables (including for external Supabase and Asterisk), define health checks, plan persistent storage for application data, and automate deployment via container registry webhook.",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "1. **CI/CD Pipeline for Asterisk Image:**\n   - Add a step in your GitHub Actions workflow to build and publish the 'clicktocall-asterisk' Docker image to your container registry.\n2. **Create Services in Easypanel:**\n   - Log in to Easypanel and create a new project if needed.\n   - Add three services: backend (Node/Express), frontend (React), and asterisk.\n   - For each service, specify the Docker image from your registry and configure the necessary environment variables using the Easypanel interface.\n   - For the 'asterisk' service, use the image published in step 1.\n3. **Configure Asterisk Ports:**\n   - In the 'asterisk' service, configure required ports, including 5060/udp for SIP and 10000-20000/udp for RTP traffic.\n4. **Map Environment Variables:**\n   - Import environment variables from your .env files into Easypanel for each service.\n   - Ensure sensitive variables (e.g., Supabase credentials, Asterisk configuration) are securely managed.\n   - In the 'api' service, set ASTERISK_HOST to the internal Easypanel service name for Asterisk (e.g., 'asterisk').\n5. **Define Health Checks:**\n   - For backend, frontend, and Asterisk, configure HTTP or custom health checks as appropriate (e.g., `/health` endpoint for backend/frontend).\n6. **Plan Persistent Storage:**\n   - For backend, frontend, and Asterisk, use bind mounts or volumes as needed for configuration, temporary files, or static files.\n   - Configure mounts in Easypanel as required for application data or logs.\n7. **Automate Deployment via Webhook:**\n   - Set up a webhook in your container registry (e.g., Docker Hub, GitHub Container Registry) to trigger Easypanel to pull and deploy new images automatically when they are pushed.\n   - Configure Easypanel to listen for webhook events and update the relevant service.\n8. **Verify Configuration:**\n   - Ensure all environment variables are correctly mapped and health checks are functioning.\n   - Test persistent storage by restarting services and verifying data retention.\n   - Trigger a new image push and confirm that the deployment is automatically updated.",
+        "testStrategy": "1. **CI/CD Pipeline:**\n   - Confirm that the GitHub Actions workflow builds and publishes the 'clicktocall-asterisk' image to the container registry.\n2. **Asterisk Service Ports:**\n   - Verify that the 'asterisk' service in Easypanel exposes and listens on 5060/udp and 10000-20000/udp, and that SIP/RTP traffic is correctly routed.\n3. **Service Health Checks:**\n   - Verify that health checks for backend, frontend, and Asterisk are returning expected results.\n4. **Environment Variables:**\n   - Confirm that all environment variables (including Supabase and Asterisk) are correctly loaded and accessible within each service.\n   - Ensure that ASTERISK_HOST in the 'api' service points to the internal Easypanel service name for Asterisk.\n5. **Persistent Storage:**\n   - Restart backend, frontend, and Asterisk services and ensure any mounted files or configurations remain intact after restarts.\n6. **Automated Deployment:**\n   - Push a new image to the registry and confirm that Easypanel automatically updates the corresponding service.\n7. **End-to-End Testing:**\n   - Access the frontend and backend endpoints to ensure they are operational and communicating with the external Supabase database and Asterisk service as expected.",
         "subtasks": [
-            { "id": 1, "title": "Application Registration in RD Station", "status": "done", "dependencies": [] },
-            { "id": 2, "title": "Implement OAuth 2.0 Authorization Flow", "status": "done", "dependencies": [1] },
-            { "id": 3, "title": "Secure Token Storage Implementation", "status": "pending", "dependencies": [2] },
-            { "id": 4, "title": "Backend Endpoint Creation for Contacts", "status": "pending", "dependencies": [3] },
-            { "id": 5, "title": "Backend Endpoint Creation for Deals", "status": "pending", "dependencies": [3] },
-            { "id": 6, "title": "Backend Endpoint Creation for Activities/Notes", "status": "pending", "dependencies": [3] },
-            { "id": 7, "title": "API Documentation Review and Contract Validation", "status": "pending", "dependencies": [4, 5, 6] }
+          {
+            "id": 1,
+            "title": "Create Backend and Frontend Services in Easypanel",
+            "description": "Set up separate backend and frontend services within Easypanel, ensuring each service is configured with the appropriate runtime and network settings.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Navigate to the 'Applications' tab in Easypanel, click 'New Application', and configure both backend and frontend services as needed for your project.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Map Environment Variables for Supabase, Twilio, and RDCRM",
+            "description": "Configure environment variables for third-party integrations (Supabase, Twilio, RDCRM) in each relevant service to enable secure and correct operation.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Within each service's configuration, add the required environment variables (API keys, secrets, endpoints) for Supabase, Twilio, and RDCRM.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Define Health Checks and Enable Auto-Restart",
+            "description": "Set up health check endpoints and configure auto-restart policies to ensure service reliability and automatic recovery from failures.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Specify health check URLs or commands in the service settings and enable auto-restart options as supported by Easypanel.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure Persistent Storage for Temporary Files and Logs",
+            "description": "Set up persistent volumes for storing temporary files and logs to ensure data is retained across service restarts and deployments.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "In the service configuration, define and mount volumes for directories requiring persistence, such as uploads or log folders.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Set Up Deployment Webhook from Container Registry",
+            "description": "Automate deployments by configuring a webhook that triggers service updates in Easypanel when new container images are pushed to the registry.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Obtain the webhook URL from Easypanel and configure it in your container registry to notify Easypanel of new image versions.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Verify and Document Configuration in Easypanel",
+            "description": "Review all service configurations, test deployments, and document the setup within the Easypanel dashboard for future reference and team onboarding.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Check that all services are running as expected, environment variables are set, health checks pass, storage is persistent, and deployment automation works. Document the configuration steps and settings.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Add Asterisk Service and Update Environment Variables",
+            "description": "Add a new Asterisk service to Easypanel and update environment variables to remove Twilio and add Asterisk configuration.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a new Asterisk service in Easypanel. Update environment variables for all relevant services to remove Twilio and include Asterisk configuration. Ensure secure management of sensitive variables.",
+            "testStrategy": "Verify that the Asterisk service is running and accessible. Confirm that environment variables for Twilio have been removed and Asterisk variables are correctly set in all relevant services."
+          },
+          {
+            "id": 8,
+            "title": "Add CI/CD Step to Build and Publish Asterisk Image",
+            "description": "Implement a step in the GitHub Actions workflow to build and publish the 'clicktocall-asterisk' Docker image to the container registry as part of the production deployment pipeline.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Update the GitHub Actions workflow file to include steps for building the 'clicktocall-asterisk' Docker image and pushing it to the configured container registry (e.g., Docker Hub, GitHub Container Registry). Ensure credentials are securely managed.",
+            "testStrategy": "Trigger the workflow and verify that the image is built and published to the registry successfully."
+          },
+          {
+            "id": 9,
+            "title": "Configure Asterisk Service Ports in Easypanel",
+            "description": "Set up the 'asterisk' service in Easypanel to expose and listen on the required SIP and RTP ports (5060/udp and 10000-20000/udp).",
+            "status": "pending",
+            "dependencies": [
+              7
+            ],
+            "details": "In the 'asterisk' service configuration, add port mappings for 5060/udp and 10000-20000/udp to allow SIP and RTP traffic. Ensure firewall rules and Easypanel settings permit UDP traffic on these ports.",
+            "testStrategy": "Test SIP and RTP connectivity to the Asterisk service from within the network and from allowed external sources."
+          },
+          {
+            "id": 10,
+            "title": "Update ASTERISK_HOST in API Service Environment Variables",
+            "description": "Update the 'api' service environment variables so that ASTERISK_HOST points to the internal Easypanel service name for Asterisk.",
+            "status": "pending",
+            "dependencies": [
+              7
+            ],
+            "details": "Edit the environment variables for the 'api' service in Easypanel. Set ASTERISK_HOST to the internal service name (e.g., 'asterisk') so that the API can communicate with the Asterisk service over the internal network.",
+            "testStrategy": "Verify that the API service can resolve and connect to the Asterisk service using the updated ASTERISK_HOST variable."
+          }
         ]
       },
       {
         "id": 3,
-        "title": "Twilio (or CPaaS) Voice API Integration",
-        "description": "Integrate Twilio (or equivalent CPaaS) for initiating and managing VoIP calls.",
-        "details": "Set up Twilio account and obtain API keys. Implement backend endpoints to initiate calls (WebRTC and call bridging). Use Twilio SDK for Node.js. Handle call events (answered, completed, failed) via webhooks. Store call metadata.",
-        "testStrategy": "Test call initiation and event handling with test numbers. Verify webhook integration and call metadata storage.",
-        "priority": "medium",
-        "dependencies": [1],
-        "status": "pending",
+        "title": "Implement Node.js/Express API with TypeScript, Supabase, and RD Station CRM Integration",
+        "description": "Desenvolver o backend core da API utilizando Node.js, Express e TypeScript, integrando Supabase (PostgreSQL) via @supabase/supabase-js ou chamadas SQL diretas, e implementar integração com a RD CRM API v1 via autenticação por token simples (sem OAuth2). O sistema será B2B, com ponto de configuração único para o token da empresa, herdado por todos os usuários. Incluir endpoints para cadastro/atualização do token, além de endpoints RESTful para operações de contatos, tarefas, anotações e logging de chamadas, respeitando limites de requisição da RD CRM.",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "1. Inicializar um novo projeto Node.js com TypeScript e Express. Configurar TypeScript e scripts para builds de desenvolvimento e produção. 2. Definir schema SQL no Supabase para contatos, tarefas, anotações, chamadas e configuração (incluindo campo rd_token criptografado e data de expiração opcional). Gerar tipos TypeScript via Supabase CLI. 3. Implementar módulo de integração com RD CRM API v1: criar funções para criar contatos, tarefas, anotações e logar eventos de chamada concluída, sempre incluindo o header Authorization: Token <token> em todas as chamadas. 4. Criar endpoint seguro (acesso restrito a admin) para cadastrar/atualizar o token RD CRM. 5. Desenvolver middleware ou service para injetar o token nas requisições à RD CRM. 6. Implementar controle para respeitar o limite de 120 requisições por minuto à RD CRM. 7. Desenvolver endpoints RESTful para CRUD de contatos, tarefas, anotações e logging de chamadas, com validação e tratamento de erros, utilizando o client Supabase (service role key) para operações server-side seguras. 8. Escrever testes unitários para o client de integração RD CRM e testes de integração para os endpoints. 9. Documentar endpoints da API, fluxo de integração e configuração do token para referência futura e integração frontend.",
+        "testStrategy": "- Executar testes unitários para o client de integração RD CRM, incluindo cenários de erro e limites de requisição. - Realizar testes de integração para os endpoints CRUD e de logging, verificando operações no banco e controle de acesso. - Testar manualmente o fluxo de configuração do token RD CRM e as operações de integração usando um token válido de teste. - Validar que contatos, tarefas, anotações e logs de chamadas podem ser criados, lidos, atualizados e removidos via API, e que todos os endpoints respeitam autenticação e autorização conforme necessário. - Revisar documentação da API e confirmar que o comportamento dos endpoints está de acordo com as especificações.",
         "subtasks": [
-            { "id": 1, "title": "Twilio Account Setup", "status": "pending", "dependencies": [] },
-            { "id": 2, "title": "API Key Management", "status": "pending", "dependencies": [1] },
-            { "id": 3, "title": "Backend Endpoint for Call Initiation", "status": "pending", "dependencies": [2] },
-            { "id": 4, "title": "WebRTC Integration", "status": "pending", "dependencies": [3] },
-            { "id": 5, "title": "Call Event Webhook Handling", "status": "pending", "dependencies": [3] },
-            { "id": 6, "title": "Call Metadata Storage", "status": "pending", "dependencies": [5] },
-            { "id": 7, "title": "SDK Usage and Helper Library Integration", "status": "pending", "dependencies": [2] },
-            { "id": 8, "title": "Test Number Validation", "status": "pending", "dependencies": [3] }
+          {
+            "id": 1,
+            "title": "Scaffold Node/TS Project",
+            "description": "Set up a new Node.js project with TypeScript, including necessary dependencies and configurations.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Use tools like npm and TypeScript to create a basic project structure.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Define SQL Schema for Supabase",
+            "description": "Design and implement SQL tables for contacts, tasks, notes, calls, and config in Supabase.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Use Supabase's SQL interface to create the necessary tables.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Generate TypeScript Types via Supabase CLI and CI Script",
+            "description": "Use Supabase CLI to generate TypeScript types for the defined schema and integrate with CI scripts.",
+            "status": "done",
+            "dependencies": [
+              2
+            ],
+            "details": "Automate type generation using Supabase CLI and CI tools.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement RD CRM Client with Token-Based Authentication and Rate Limiting",
+            "description": "Create a client for RD CRM using token-based authentication and implement rate limiting.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Use libraries like axios for HTTP requests and implement rate limiting using middleware.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Admin Endpoint for Saving/Updating Encrypted Token",
+            "description": "Develop an admin endpoint to securely save and update encrypted tokens.",
+            "status": "done",
+            "dependencies": [
+              4
+            ],
+            "details": "Use encryption libraries to securely handle tokens.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Middleware Service for Token Injection",
+            "description": "Implement middleware to inject tokens into requests.",
+            "status": "done",
+            "dependencies": [
+              5
+            ],
+            "details": "Use Express middleware to inject tokens into outgoing requests.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "CRUD Endpoints for Contacts, Tasks, Notes, Calls Using Supabase-js",
+            "description": "Create CRUD endpoints for managing contacts, tasks, notes, and calls using Supabase-js.",
+            "status": "done",
+            "dependencies": [
+              3,
+              6
+            ],
+            "details": "Use Supabase-js to interact with the database and implement CRUD operations.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Unit and Integration Tests for RD CRM Client and Endpoints",
+            "description": "Write unit tests for the RD CRM client and integration tests for the CRUD endpoints.",
+            "status": "done",
+            "dependencies": [
+              4,
+              7
+            ],
+            "details": "Use testing frameworks like Jest for unit and integration tests.",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "API Documentation and Token Flow",
+            "description": "Document the API endpoints and describe the token flow process.",
+            "status": "done",
+            "dependencies": [
+              7,
+              8
+            ],
+            "details": "Use tools like Swagger or API Blueprint for documentation.",
+            "testStrategy": ""
+          }
         ]
       },
       {
         "id": 4,
-        "title": "Develop Reusable Click-to-Call UI Component",
-        "description": "Develop a reusable UI component for click-to-call functionality, adaptable for various integrations (e.g., Chrome Extension, direct web embed).",
-        "details": "Instead of focusing solely on a Chrome Extension, the primary goal is to create a flexible, self-contained dialer component (e.g., in React). This component will handle UI states (idle, calling, connected) and trigger backend API calls. The initial implementation can be tested within the frontend application, and later adapted for a Chrome Extension or other CRM integrations.",
-        "testStrategy": "Test the component's UI states and event handling within a test page. Verify that it correctly triggers backend API endpoints for call initiation.",
-        "priority": "medium",
-        "dependencies": [2, 3],
-        "status": "pending",
+        "title": "Integrate Twilio Voice: Endpoints, Webhooks, Metadata, and SDK Configuration",
+        "description": "Implement endpoints to initiate voice calls via Twilio, receive and process Twilio Voice webhooks, store call metadata, configure the Twilio SDK, validate phone numbers, handle errors, and manage credentials via environment variables. The system must support a multi-tenant architecture using Twilio Subaccounts: each company will have its own Twilio Subaccount, and all telephony operations for a company will use its specific credentials stored in the `companies` table. The main Twilio account credentials (from .env) are reserved for administrative actions, such as creating new subaccounts. Automatic provisioning of subaccounts will be addressed in a future task (see Task #10).",
+        "status": "cancelled",
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "high",
+        "details": "**Architectural Decision: Centralized Account with Subaccounts**\n\n- The system will operate on a centralized Twilio account model. The main account (credentials in the `.env` file) will be used for administrative purposes only.\n- For each client company registered in our SaaS, a dedicated **Subaccount** will be created via the Twilio API.\n- The `Account SID` and `Auth Token` for each subaccount will be stored in the respective row of our `companies` table.\n- All call initiation and telephony operations for a specific company will be performed using the credentials of its dedicated subaccount, ensuring cost and usage isolation.\n- The automatic provisioning of these subaccounts will be handled in a future task (see Task #10).\n\n**Call Lifecycle Logic:**\n\n1.  **Initiation (`POST /api/calls/start`):**\n    *   Our API receives a request from the frontend to start a call, including the company context.\n    *   It immediately creates a record in the `calls` table with a status of `initiated`.\n    *   It loads the Twilio credentials for the relevant company from the `companies` table.\n    *   It then makes a `POST` request to the Twilio API using the subaccount credentials.\n    *   Twilio responds with a unique `Call SID`.\n    *   Our API updates the corresponding record in our `calls` table with this `Call SID`.\n\n2.  **Status Updates (`POST /api/webhooks/twilio`):**\n    *   Twilio will send `POST` requests to this webhook to notify us of call status changes.\n    *   Our webhook will find the call in our database using the `Call SID` and update the `status` column accordingly.\n    *   **Status Mapping:**\n        *   `queued` -> `queued`\n        *   `ringing` -> `ringing`\n        *   `in-progress` -> `in-progress`\n        *   `completed` -> `completed` (Save duration and recording_url)\n        *   `busy` -> `busy`\n        *   `failed` -> `failed`\n        *   `no-answer` -> `no-answer`\n\nThis two-endpoint approach (one for initiation, one for webhooks) ensures a robust, real-time reflection of the call's state in our own database, with all operations performed in the context of the correct Twilio subaccount.",
+        "testStrategy": "- Write unit and integration tests for the call initiation endpoint, including validation and error scenarios, ensuring that the correct subaccount credentials are used for each company.\n- Use Twilio's test credentials and mock webhooks to simulate incoming events and verify webhook endpoint behavior for different subaccounts.\n- Confirm that call metadata is correctly stored in the database for both outbound and inbound calls, and that the company context is respected.\n- Manually test with real Twilio numbers and subaccounts to ensure end-to-end functionality.\n- Check that environment variables are loaded and credentials are not hardcoded, and that subaccount credentials are securely retrieved from the `companies` table.\n- Review logs for error handling and security compliance, ensuring no sensitive credentials are exposed.\n- Use tools like Postman or curl to send mock webhook requests and validate responses for different company contexts.",
         "subtasks": [
-            { "id": 1, "title": "Marketplace Integration Research", "status": "pending", "dependencies": [] },
-            { "id": 2, "title": "Chrome Extension Development", "status": "pending", "dependencies": [1] },
-            { "id": 3, "title": "UI Injection Logic", "status": "pending", "dependencies": [2] },
-            { "id": 4, "title": "Button Event Handling", "status": "pending", "dependencies": [3] },
-            { "id": 5, "title": "Backend Call Trigger", "status": "pending", "dependencies": [4] },
-            { "id": 6, "title": "Call Status Overlay", "status": "pending", "dependencies": [5] },
-            { "id": 7, "title": "End-to-End Flow Testing", "status": "pending", "dependencies": [] }
+          {
+            "id": 1,
+            "title": "Install and Configure Twilio SDK",
+            "description": "Set up the Twilio SDK in the project environment, securely configure credentials, and verify connectivity with Twilio services.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Install the official Twilio SDK for your programming language. Store the main Account SID and Auth Token securely (e.g., environment variables) for administrative actions. Ensure the system can dynamically load and use subaccount credentials from the `companies` table for all telephony operations.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Call Initiation Endpoint (POST /call)",
+            "description": "Develop an authenticated POST endpoint to initiate outbound calls using the Twilio SDK.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Create the /call endpoint. Accept parameters such as destination phone number, caller ID, and company identifier. Use the Twilio SDK to initiate the call with the subaccount credentials for the specified company and handle the response.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Webhook Endpoint (/twilio/webhook)",
+            "description": "Create an endpoint to receive and process Twilio webhook events related to call status and events.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop the /twilio/webhook endpoint to handle POST requests from Twilio. Parse incoming event data, determine the relevant company context (using Call SID or other metadata), and respond with appropriate status codes.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Store Call Metadata in Supabase",
+            "description": "Persist call metadata (e.g., call SID, status, timestamps, participants) in the 'calls' table of Supabase.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Design the schema for the 'calls' table if not already present. Insert or update call records based on webhook events and call initiation responses using the Supabase client, ensuring each record is associated with the correct company.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Phone Number Validation and Error Handling",
+            "description": "Implement validation for phone numbers and robust error handling for all endpoints.",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Validate phone numbers using regex or Twilio Lookup API. Handle errors from Twilio API calls and webhook processing, returning meaningful error messages. Ensure errors are logged with company context.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Logging and Monitoring",
+            "description": "Integrate logging and monitoring for call initiation, webhook events, and error scenarios.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3,
+              5
+            ],
+            "details": "Log all incoming requests, responses, and errors, including company context. Set up monitoring/alerting for failures or suspicious activity. Ensure logs do not expose sensitive information, especially subaccount credentials.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Documentation and Usage Examples",
+            "description": "Document the API endpoints, configuration steps, and provide usage examples for developers.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "Write clear documentation for endpoint usage, request/response formats, error codes, and setup instructions. Include example requests and responses, and explain the subaccount architecture and company context handling.",
+            "testStrategy": ""
+          }
         ]
       },
       {
         "id": 5,
-        "title": "Automatic Call Logging in CRM",
-        "description": "Automatically log call details as activities/notes in RD Station CRM.",
-        "details": "On call completion, backend receives event from Twilio. Fetch call metadata (duration, result, recording URL). Create activity/note in RD Station CRM via API. Include call details and link to recording if available.",
-        "testStrategy": "Test end-to-end flow: call → event → log creation in CRM. Verify all metadata is correctly stored.",
-        "priority": "medium",
-        "dependencies": [2, 3],
+        "title": "Develop Reusable React Dialer Component with State Management and Backend Integration",
+        "description": "Reoriente o componente para ser um Softphone WebRTC baseado em JsSIP, em vez de um dialer REST tradicional. O componente deve gerenciar estados de idle, discando, conectado e desconectado, integrando-se ao backend apenas para controle e autenticação, enquanto a mídia de áudio será roteada diretamente via Asterisk usando WebRTC/SIP. O componente deve ser reutilizável, suportar embedding e uso em extensão Chrome, e incluir testes de UI e documentação Storybook. Utilize Supabase UI Library (shadcn/ui) para autenticação, status em tempo real, chamadas recentes e upload de arquivos conforme necessário.",
         "status": "pending",
-        "subtasks": []
+        "dependencies": [
+          1,
+          4
+        ],
+        "priority": "medium",
+        "details": "Implemente um componente React encapsulando a lógica de softphone WebRTC usando JsSIP para sinalização SIP sobre WebSocket. O componente deve gerenciar transições de estado (idle, discando, conectado, desconectado) e expor props/callbacks para integração com o parent. A integração com o backend será feita via REST/WebSocket apenas para controle (ex: autenticação, registro de chamadas, permissões), enquanto a mídia de áudio será tratada diretamente entre browser e Asterisk. Use componentes do Supabase UI Library (shadcn/ui) para autenticação (Password-based Authentication block), status em tempo real e chamadas recentes (via Supabase Realtime e Infinite Query Hook), e uploads de gravações/anexos (File Upload block integrado ao Supabase Storage). Garanta que o componente seja embutível em outros apps React e compatível com extensão Chrome (evitando manipulação direta do DOM e usando message passing para comunicação). Documente props e exemplos de uso, incluindo integração com backend e cenários de extensão Chrome. Considere acessibilidade e design responsivo.",
+        "testStrategy": "Implemente testes unitários e de integração para todos os estados e transições do softphone, simulando interações SIP/WebRTC com mocks de JsSIP e backend (REST/WebSocket). Use React Testing Library para simular ações do usuário (discar, atender, encerrar chamada, receber eventos SIP) e verificar atualizações de UI. Valide embutibilidade renderizando o componente em test harness e Storybook com diferentes props. As histórias do Storybook devem cobrir todos os estados e cenários de integração. Prototipe embedding em extensão Chrome e valide comunicação via message passing. Confirme acessibilidade com ferramentas automatizadas (ex: axe). Teste integração com Supabase UI mockando autenticação, atualizações em tempo real, queries e uploads.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install Supabase UI and shadcn/ui Dependencies",
+            "description": "Add @supabase/auth-ui-react and shadcn/ui packages to the project to enable Supabase UI components and theming.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Run npm or yarn commands to install @supabase/auth-ui-react and shadcn/ui. Ensure compatibility with your React version.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure Supabase UI Theme",
+            "description": "Set up and customize the theme for Supabase UI components using shadcn/ui and Tailwind CSS conventions.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Follow Supabase UI Library and shadcn/ui documentation to configure theme settings, colors, and typography for consistent UI appearance.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate Password Authentication Block",
+            "description": "Implement the password-based authentication component from Supabase UI for user sign-in and sign-up flows.",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Add and configure the Auth component, connect it to your Supabase project, and ensure proper handling of authentication states.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Call Status and Recent Calls Components with Realtime and Infinite Query",
+            "description": "Develop UI components to display call status and recent calls, leveraging Supabase Realtime and infinite query patterns for live updates.",
+            "status": "pending",
+            "dependencies": [
+              3
+            ],
+            "details": "Use Supabase Realtime subscriptions and TanStack Query (or similar) for efficient data fetching and live updates.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate File Upload Block for Recordings and Attachments",
+            "description": "Add and configure the File Upload Dropzone component from Supabase UI to handle user uploads of recordings and attachments.",
+            "status": "pending",
+            "dependencies": [
+              4
+            ],
+            "details": "Ensure correct storage bucket configuration and permissions in Supabase, and connect the upload component to backend storage.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement JsSIP-based WebRTC Softphone Logic",
+            "description": "Desenvolver a lógica principal do softphone usando JsSIP para sinalização SIP sobre WebSocket, gerenciando estados de chamada (idle, discando, conectado, desconectado) e integração com Asterisk para mídia.",
+            "status": "pending",
+            "dependencies": [
+              5
+            ],
+            "details": "Configure JsSIP para registrar o usuário SIP, iniciar e receber chamadas, e gerenciar eventos de sessão. Implemente callbacks para integração com o parent e sincronização de estado com o backend para controle e logging.",
+            "testStrategy": "Testar registro SIP, início e término de chamadas, recebimento de chamadas e manipulação de eventos SIP usando mocks de JsSIP e simulações de backend."
+          },
+          {
+            "id": 7,
+            "title": "Write UI Tests with React Testing Library and Storybook Coverage",
+            "description": "Create comprehensive UI tests for all components using React Testing Library, and ensure Storybook stories provide adequate coverage.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Write test cases for authentication, call status, file upload, and integration flows. Validate Storybook stories for all UI states.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Document Props, Usage Examples, Embedding, and Chrome Extension Integration",
+            "description": "Produce documentation for all components, including prop tables, usage examples, embedding instructions, and Chrome extension integration guidelines.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Use Storybook Docs and markdown files to document component APIs, provide code samples, and explain how to embed or extend components in Chrome extensions.",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 6,
-        "title": "Secure Call Recording Storage and Compliance",
-        "description": "Implement secure storage and management of call recordings with compliance to LGPD.",
-        "details": "Store call recordings in an S3-compatible encrypted cloud storage (e.g., Amazon S3, DigitalOcean Spaces, MinIO), which can be easily integrated with the production environment. Generate secure, time-limited access URLs. Implement data retention and deletion policies. Ensure compliance with LGPD for personal data.",
-        "testStrategy": "Test recording upload, download, and deletion. Verify access controls and compliance checks.",
+        "title": "Implement Automatic Call Logging in CRM via Twilio Webhook and RD Station API",
+        "description": "Develop a backend service that listens for Twilio call webhooks, retrieves call metadata, and logs activities or notes in RD Station via API, ensuring retries and idempotency. Include comprehensive end-to-end tests.",
+        "details": "1. Set up an HTTP endpoint to receive Twilio webhook events for call status updates (e.g., completed, failed). Validate incoming requests to ensure authenticity (e.g., Twilio signature verification). 2. Upon receiving a webhook, extract relevant call metadata (call SID, status, duration, participants, timestamps, etc.). 3. Implement logic to fetch any additional metadata from Twilio if needed (using Twilio REST API). 4. Use the RD Station API to create or update an activity/note associated with the relevant contact or deal, mapping Twilio call data to RD Station fields. 5. Ensure idempotency by tracking processed webhook events (e.g., via call SID or a unique event ID) to prevent duplicate CRM entries. 6. Implement a robust retry mechanism for both Twilio and RD Station API interactions, handling transient failures and respecting rate limits. 7. Log all processing steps and errors for observability. 8. Document the integration flow and provide configuration options for webhook URLs, API credentials, and retry policies.",
+        "testStrategy": "- Write unit tests for webhook parsing, Twilio signature validation, and RD Station API payload construction. - Mock Twilio and RD Station APIs to simulate various scenarios (success, failure, duplicate events, network errors). - Implement end-to-end tests that trigger a simulated Twilio webhook, verify correct metadata extraction, and confirm that the expected activity/note appears in RD Station. - Test idempotency by sending duplicate webhook events and ensuring only one CRM entry is created. - Validate retry logic by simulating transient API failures and confirming successful eventual delivery.",
+        "status": "cancelled",
+        "dependencies": [
+          3,
+          4
+        ],
         "priority": "medium",
-        "dependencies": [3],
-        "status": "pending",
         "subtasks": [
-            { "id": 1, "title": "Encrypted Cloud Storage Setup", "status": "pending", "dependencies": [] },
-            { "id": 2, "title": "Recording Upload Implementation", "status": "pending", "dependencies": [1] },
-            { "id": 3, "title": "Time-Limited URL Generation", "status": "pending", "dependencies": [2] },
-            { "id": 4, "title": "Data Retention Policy Enforcement", "status": "pending", "dependencies": [2] },
-            { "id": 5, "title": "Deletion Logic Implementation", "status": "pending", "dependencies": [4] },
-            { "id": 6, "title": "Compliance Checks (e.g., LGPD)", "status": "pending", "dependencies": [4, 5] },
-            { "id": 7, "title": "Access Control Validation", "status": "pending", "dependencies": [3, 6] }
+          {
+            "id": 1,
+            "title": "Configure Webhook Endpoint /twilio/log-call",
+            "description": "Set up an HTTP POST endpoint at /twilio/log-call to receive webhook events from Twilio.",
+            "dependencies": [],
+            "details": "Implement the endpoint using your web framework of choice, ensuring it can parse incoming requests from Twilio and respond with the appropriate status code as quickly as possible to avoid timeouts.[5][3]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Validate Twilio Signature",
+            "description": "Implement logic to verify the authenticity of incoming webhook requests using Twilio's signature validation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Extract the X-Twilio-Signature header and validate it against the request body and your Twilio Auth Token to ensure the request is genuinely from Twilio.[5]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Extract Metadata and Map to RD CRM Model",
+            "description": "Parse the webhook payload to extract relevant call metadata and map it to the RD Station CRM data model.",
+            "dependencies": [
+              2
+            ],
+            "details": "Identify required fields (e.g., call SID, phone numbers, timestamps) and transform them into the format expected by the RD Station API.[4][2]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Idempotency via Call SID in Supabase",
+            "description": "Ensure that each call is processed only once by storing and checking the Twilio Call SID in Supabase.",
+            "dependencies": [
+              3
+            ],
+            "details": "Before processing, check if the Call SID already exists in Supabase. If it does, skip processing to prevent duplicate CRM entries.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate RD CRM API with Retries and Backoff",
+            "description": "Send the mapped data to the RD Station CRM API, implementing retry logic with exponential backoff for transient failures.",
+            "dependencies": [
+              4
+            ],
+            "details": "Use the RD Station API to create tasks or notes. On failure, retry the request with increasing delays, handling rate limits and network errors gracefully.[2]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Logging, Monitoring, and Failure Alerts",
+            "description": "Implement robust logging of all webhook events, API interactions, and errors. Set up monitoring and alerting for failures.",
+            "dependencies": [
+              5
+            ],
+            "details": "Log incoming requests, processing steps, and errors for audit and debugging. Integrate with monitoring tools to alert on repeated failures or anomalies.[5]",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Documentation and End-to-End Testing",
+            "description": "Document the entire integration process and develop end-to-end tests to validate all logic and error handling.",
+            "dependencies": [],
+            "details": "Provide clear setup, usage, and troubleshooting documentation. Write automated tests simulating Twilio webhooks and verifying correct CRM updates and idempotency.",
+            "status": "pending",
+            "testStrategy": ""
+          }
         ]
       },
       {
         "id": 7,
-        "title": "Metrics Dashboard and Reporting",
-        "description": "Develop a dashboard for call metrics and reporting.",
-        "details": "Create a React dashboard to display call volume, duration, success rate, and agent rankings. Aggregate data from backend database. Optionally, explore integration with RD Station CRM analytics if API allows. Use Chart.js or D3.js for visualizations.",
-        "testStrategy": "Test dashboard with mock and real data. Verify data aggregation and visualization accuracy.",
-        "priority": "medium",
-        "dependencies": [1, 5],
+        "title": "Implement Secure Recording Storage with S3/Spaces: Encryption, Signed URLs, Retention, and LGPD Compliance",
+        "description": "Develop a secure storage solution for call recordings generated by Asterisk on the local server. The backend is responsible for transferring these recordings to S3/Spaces with encryption, signed URL generation, automated retention policies, and LGPD compliance, including cleanup and audit scripts.",
         "status": "pending",
-        "subtasks": []
+        "dependencies": [
+          4,
+          6
+        ],
+        "priority": "medium",
+        "details": "1. Configure S3/Spaces buckets to enforce server-side encryption for all uploaded recordings, leveraging default encryption (SSE-S3) or customer-managed keys as required for compliance[1][3]. 2. Implement backend logic to monitor the local directory where Asterisk stores recordings, and securely transfer these files to S3/Spaces using HTTPS. Ensure uploads include metadata for retention and audit purposes. 3. Generate pre-signed URLs for controlled, time-limited access to recordings, supporting both upload (if needed for reprocessing) and download scenarios[2][4]. 4. Define and enforce automatic retention policies: store metadata (e.g., upload timestamp, retention period) and implement scheduled scripts or Lambda functions to delete recordings after the retention period expires, ensuring compliance with LGPD data minimization requirements. 5. Develop an audit logging mechanism to track all access and deletion events, storing logs securely and making them available for compliance reviews. 6. Provide a script or scheduled job for periodic cleanup of expired recordings and for generating audit reports. 7. Document all security controls, encryption settings, and compliance measures, including procedures for data subject requests (e.g., deletion on demand).",
+        "testStrategy": "- Verify that all recordings generated by Asterisk are successfully transferred to S3/Spaces and are encrypted at rest by inspecting S3/Spaces object properties and encryption headers. - Test generation and expiration of pre-signed URLs for download (and upload if applicable), ensuring access is only possible within the allowed time window. - Simulate retention policy by uploading test files with short retention periods and confirming automated deletion after expiry. - Review audit logs to ensure all access, deletion, and retention events are accurately recorded. - Perform LGPD compliance checks: validate that data can be deleted on request and that retention policies are enforced. - Conduct security review to confirm that only authorized users can generate signed URLs and access recordings.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Encrypted Storage Bucket",
+            "description": "Set up a Supabase Storage or S3/Spaces bucket with encryption enabled to ensure secure storage of recordings.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Verify encryption support and correct configuration in the storage provider dashboard. Ensure the encryption algorithm is supported and properly set to avoid BucketEncryptionError or FileEncryptionError.[1][3]",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Backend Signed Upload Endpoint",
+            "description": "Develop a backend endpoint that generates signed upload URLs for clients to securely upload recordings.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Use server-side credentials (access_key and secret_key) to generate signed URLs, ensuring uploads are authenticated and scoped per user or role as needed.[2][4]",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Generate Signed Playback URLs",
+            "description": "Create logic to generate signed URLs for secure playback access to stored recordings.",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Ensure playback URLs are time-limited and respect access control policies, leveraging S3-compatible signed URL mechanisms or Supabase's RLS features.[2]",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Automate Retention Policy Enforcement",
+            "description": "Set up a scheduled process (cron job or script) to automatically delete recordings after a defined retention period.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement logic to scan the bucket and remove files older than the retention threshold, ensuring compliance with data minimization requirements.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Enable Audit Logging and Access Tracking",
+            "description": "Configure audit logs to track uploads, downloads, and deletions of recordings for security and compliance.",
+            "status": "pending",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Ensure all access events are logged with user identity, timestamp, and action details. Store logs securely for later review.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop Manual Cleanup Script and Testing Procedures",
+            "description": "Create a script for manual cleanup of recordings and design tests to validate retention and deletion logic.",
+            "status": "pending",
+            "dependencies": [
+              4
+            ],
+            "details": "Script should allow selective deletion and provide output for verification. Test cases must cover edge scenarios and error handling.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Prepare LGPD Compliance Documentation",
+            "description": "Document storage, retention, and access policies to demonstrate compliance with LGPD and provide operational instructions.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              4,
+              5
+            ],
+            "details": "Include encryption details, retention schedules, audit log procedures, and user rights handling. Ensure documentation is clear for audits.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Backend Transfer from Asterisk to S3/Spaces",
+            "description": "Develop and deploy backend logic to monitor the local directory where Asterisk stores call recordings and securely transfer new files to S3/Spaces.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "The backend should detect new recordings generated by Asterisk, upload them to the encrypted S3/Spaces bucket using HTTPS, and attach necessary metadata for retention and audit. Ensure error handling and retry logic for failed transfers.",
+            "testStrategy": "Simulate Asterisk recording generation, verify that new files are detected and transferred to S3/Spaces, and confirm that metadata is correctly attached. Test error scenarios such as network failures and verify retry behavior."
+          }
+        ]
       },
       {
         "id": 8,
-        "title": "Onboarding, Documentation, and Support Materials",
-        "description": "Create self-service onboarding, documentation, and support resources.",
-        "details": "Develop step-by-step onboarding guides for admins and users. Create FAQ and help articles. Implement in-app tooltips and support links. Prepare materials for email and LinkedIn campaigns targeting ex-Zenvia users.",
-        "testStrategy": "Validate onboarding flow with test users. Review documentation for clarity and completeness.",
-        "priority": "medium",
-        "dependencies": [1],
+        "title": "Develop Metrics Dashboard with React, Chart.js, Aggregated API, and JWT Authentication",
+        "description": "Create a metrics dashboard in React that visualizes call volume, duration, success rate, and agent ranking using Chart.js, with backend aggregation, JWT authentication, and integrated deployment.",
+        "details": "1. Design and implement a backend API endpoint (Node.js/Express) that aggregates call data from the database, calculating total call volume, average/total duration, success rate, and agent rankings. Ensure efficient queries and proper data shaping for frontend consumption.\n2. Secure the API with JWT authentication, requiring a valid token for all dashboard data requests.\n3. In the React frontend, set up a dashboard page using a grid layout. Use react-chartjs-2 and Chart.js to render visualizations: bar/line charts for volume and duration, pie/donut for success rate, and a leaderboard for agent ranking.\n4. Fetch aggregated metrics from the backend API, handling loading and error states. Display summary cards for key metrics and interactive charts for trends and rankings.\n5. Ensure the dashboard is responsive and visually polished, with clear legends, tooltips, and accessible color schemes.\n6. Integrate the dashboard into the existing frontend app, protecting the route with JWT-based authentication (e.g., using React context or a higher-order component).\n7. Prepare Dockerfile updates and deployment scripts to ensure the dashboard and backend API are deployed together, with environment variables for API URLs and JWT secrets.",
+        "testStrategy": "- Write backend unit and integration tests for aggregation logic, including edge cases (e.g., no data, partial failures).\n- Test JWT authentication by attempting API access with valid, invalid, and expired tokens.\n- In the frontend, use React Testing Library to verify correct rendering of charts and summary cards given mock API responses.\n- Manually test dashboard responsiveness, chart interactivity, and authentication flow.\n- Deploy to a staging environment and verify end-to-end data flow, chart rendering, and secure access.",
         "status": "pending",
-        "subtasks": []
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "low",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Backend /metrics Aggregation Endpoint",
+            "description": "Create a backend endpoint at /metrics that aggregates call data stored in Supabase, exposing relevant metrics for dashboard consumption.",
+            "dependencies": [],
+            "details": "Design and implement a RESTful endpoint that queries Supabase for call data, aggregates the results (e.g., counts, averages), and returns them in a structured format suitable for frontend visualization. Ensure the endpoint is performant and scalable.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Add JWT Authentication Guard",
+            "description": "Secure the /metrics endpoint using JWT authentication to ensure only authorized users can access aggregated metrics.",
+            "dependencies": [
+              1
+            ],
+            "details": "Integrate JWT verification middleware in the backend. Validate tokens on each request to /metrics, rejecting unauthorized access. Document the expected JWT claims and token acquisition process.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Design React Dashboard Layout with shadcn/ui",
+            "description": "Develop the main dashboard layout in React using shadcn/ui components for a consistent and modern UI.",
+            "dependencies": [
+              2
+            ],
+            "details": "Structure the dashboard page, including navigation, header, and content areas. Use shadcn/ui for styling and layout primitives. Ensure responsiveness and accessibility.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate Chart.js for Data Visualization",
+            "description": "Embed Chart.js components into the dashboard to visualize aggregated metrics data.",
+            "dependencies": [
+              3
+            ],
+            "details": "Configure Chart.js charts (e.g., line, bar, pie) within the dashboard layout. Map backend data to chart datasets and ensure charts update dynamically based on fetched data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Data Fetching and Caching with TanStack Query",
+            "description": "Set up React hooks using TanStack Query to fetch and cache metrics data from the backend API.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create custom hooks for API calls to /metrics, leveraging TanStack Query for caching, refetching, and error handling. Optimize for minimal re-renders and efficient data updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Protect Dashboard Route and Add UI Tests",
+            "description": "Ensure the dashboard route is protected by authentication and implement UI tests for route protection and component rendering.",
+            "dependencies": [
+              5
+            ],
+            "details": "Add route guards in the frontend to restrict access to authenticated users. Write automated UI tests to verify route protection, correct rendering of charts, and error states.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Deployment Scripts and Documentation",
+            "description": "Develop scripts and documentation for deploying the dashboard and backend, including environment setup and configuration.",
+            "dependencies": [],
+            "details": "Write deployment scripts (e.g., Docker, CI/CD) and comprehensive documentation covering environment variables, build steps, and post-deployment verification. Ensure reproducibility and clarity for future maintainers.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 9,
-        "title": "Finalize Production Infrastructure Setup",
-        "description": "Finalize and document the production deployment infrastructure, including Docker, Easypanel, and Prisma migration scripts.",
-        "details": "This task involves three key areas: 1. Documenting the complete step-by-step deployment process in the main README.md. 2. Creating a dedicated, non-interactive script (`npm run migrate:prod`) that runs `npx prisma migrate deploy`. 3. Adding health check configurations to the `docker-compose.yml`.",
-        "testStrategy": "1. Verify README.md documentation. 2. Run the migration script against the production database. 3. Observe the container startup sequence with health checks.",
-        "priority": "high",
-        "dependencies": [1, 2, 3, 4, 5, 6, 7, 8],
+        "title": "Create Comprehensive Documentation, Onboarding, and Automated Docs Generation",
+        "description": "Develop a main README with dev/prod setup, Easypanel deployment guide, environment variable examples, FAQ, video tutorials, in-app popovers, marketing materials, and automate documentation generation in CI.",
+        "details": "1. Draft a detailed README.md covering project overview, local development setup, production deployment, and troubleshooting. Include step-by-step instructions for both backend and frontend, referencing Docker and docker-compose usage as established in the infrastructure tasks. 2. Write a dedicated section or separate guide for deploying the stack on Easypanel, including prerequisites (Docker, Easypanel installation), service setup, environment variable mapping, and health checks, referencing best practices from recent guides[1][2][4]. 3. Provide .env.example files for all services, with clear comments on required and optional variables. 4. Compile a FAQ addressing common developer and deployment issues. 5. Produce or curate short video tutorials for onboarding, setup, and deployment (hosted or linked). 6. Implement in-app popovers using a React library (e.g., react-tooltip or react-joyride) to guide users through key UI features. 7. Prepare a folder with marketing materials (logos, banners, elevator pitch, screenshots). 8. Integrate automated documentation generation (e.g., using Typedoc for backend, Storybook for frontend, and Markdown linting) into the CI pipeline, ensuring docs are built and published on every push to main. 9. Ensure all documentation is accessible from a central docs/ directory and linked from the README.",
+        "testStrategy": "- Review the README and onboarding guides for completeness, clarity, and accuracy by having a new developer follow them from scratch. - Verify that the Easypanel deployment guide works by deploying a fresh instance using the documented steps. - Check that all .env.example files are present and match the latest code requirements. - Test in-app popovers for correct display and contextual relevance in the UI. - Confirm that video tutorials are accessible and up to date. - Run the CI pipeline to ensure documentation is generated and published automatically. - Validate that marketing materials are present and correctly formatted. - Solicit feedback from at least one non-core team member to identify gaps or unclear sections.",
         "status": "pending",
-        "subtasks": []
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Main README with Overview and Setup Instructions",
+            "description": "Draft a comprehensive README file that provides an overview of the project, key features, and detailed setup instructions for new users.",
+            "dependencies": [],
+            "details": "Include sections such as project description, prerequisites, installation steps, usage examples, and contribution guidelines.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Write Step-by-Step Easypanel Deployment Guide",
+            "description": "Develop a detailed guide for deploying the application using Easypanel, covering prerequisites, installation, and initial configuration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Include instructions for server preparation, Docker installation, Easypanel setup, and accessing the dashboard. Reference best practices and troubleshooting tips.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Generate Complete .env.example Files for Backend and Frontend",
+            "description": "Create example environment variable files for both backend and frontend, listing all required and optional variables with comments.",
+            "dependencies": [
+              1
+            ],
+            "details": "Ensure all sensitive values are omitted and provide clear documentation for each variable's purpose.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Compile FAQ and Troubleshooting Documentation",
+            "description": "Assemble a Frequently Asked Questions (FAQ) section and troubleshooting guide addressing common issues and solutions.",
+            "dependencies": [
+              1
+            ],
+            "details": "Gather questions from user feedback, support tickets, and internal testing. Organize by topic for easy navigation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Prepare Video Tutorial Scripts and Upload Process",
+            "description": "Write scripts for onboarding and feature walkthrough video tutorials, and outline the process for recording and uploading them.",
+            "dependencies": [
+              1
+            ],
+            "details": "Identify key user journeys to cover, draft concise scripts, and specify platforms for video hosting and embedding.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop In-App Popovers and Onboarding Content (JSON)",
+            "description": "Design and structure onboarding popovers and tooltips as JSON content for integration into the application UI.",
+            "dependencies": [
+              1
+            ],
+            "details": "Map onboarding steps to UI components, write concise instructional text, and ensure localization readiness.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Marketing Materials (Slides/PDF) for Product Overview",
+            "description": "Design marketing collateral such as slide decks and PDFs that summarize the product's value proposition and features.",
+            "dependencies": [
+              1
+            ],
+            "details": "Include visuals, key benefits, use cases, and contact information. Ensure materials are suitable for both digital and print distribution.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Configure CI for Automated Documentation Generation and Publishing",
+            "description": "Set up continuous integration workflows to automatically generate documentation (Typedoc, Swagger, Storybook) and publish to GitHub Pages.",
+            "dependencies": [
+              1
+            ],
+            "details": "Integrate documentation tools into the CI pipeline, automate builds on push, and ensure deployment to the correct GitHub Pages branch.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Migrate Call Infrastructure from Twilio to Self-Hosted Asterisk with Multi-Tenant SaaS, WebRTC, and Softphone Integration",
+        "description": "Transition the call infrastructure from Twilio to a self-hosted Asterisk PBX, maintaining multi-tenant SaaS architecture, enabling cost savings, full control, and seamless WebRTC integration with a frontend softphone.",
+        "status": "pending",
+        "dependencies": [
+          1,
+          3,
+          5
+        ],
+        "priority": "high",
+        "details": "1. **Asterisk Server Setup:** Provision and configure a self-hosted Asterisk server, ensuring network and firewall settings allow SIP/RTP traffic and secure access. Install Asterisk on a suitable cloud or on-premises environment, following best practices for security and performance[1][3].\n2. **Twilio Elastic SIP Trunk Configuration:** Set up a Twilio Elastic SIP Trunk for outbound/inbound PSTN connectivity, configuring SIP credentials, origination/termination URIs, and ACLs in the Twilio console[2][3].\n3. **Asterisk Configuration:** Modify `sip.conf` or `pjsip.conf` (depending on Asterisk version) to define the Twilio trunk, enable TLS/SRTP for secure signaling/media, and configure IP authentication[2][4].\n4. **Multi-Tenant SaaS Integration:** Ensure Asterisk and the backend services support multi-tenancy, with tenant isolation for call routing, recording, and analytics.\n5. **WebRTC and Softphone Integration:** Integrate WebRTC with Asterisk using a WebRTC gateway (e.g., Janus, Pion, or native Asterisk WebRTC support), and develop a frontend softphone component that connects via WebRTC, supporting call initiation, status, and media streaming.\n6. **Call Routing and Dialplan:** Configure Asterisk dialplan to route calls between tenants, WebRTC clients, and the Twilio SIP trunk, ensuring proper call handling and tenant context.\n7. **Monitoring and Logging:** Implement monitoring for call quality, uptime, and security, and ensure all call events are logged for analytics and troubleshooting.\n8. **Documentation:** Update documentation to reflect the new infrastructure, including setup, configuration, and troubleshooting steps for Asterisk and WebRTC integration.",
+        "testStrategy": "1. **End-to-End Call Flow Testing:** Verify inbound and outbound calls between WebRTC softphone, Asterisk, and Twilio SIP trunk, ensuring proper routing, audio quality, and tenant isolation.\n2. **Security Testing:** Validate TLS/SRTP encryption for signaling and media, and test IP authentication and ACLs to prevent unauthorized access.\n3. **Multi-Tenant Isolation Testing:** Confirm that calls and data are properly isolated between tenants, with no cross-tenant leakage.\n4. **WebRTC Softphone Testing:** Test the frontend softphone for call initiation, status updates, and media streaming, including scenarios with multiple concurrent users.\n5. **Monitoring and Logging Verification:** Check that call events are logged and available for analytics, and that monitoring alerts are triggered for critical issues.\n6. **Documentation Review:** Ensure documentation is accurate and complete, and that new developers can set up and troubleshoot the system using the provided guides.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Provision and Secure Self-Hosted Asterisk Server",
+            "description": "Set up a Linux-based environment for Asterisk, install necessary dependencies, and configure network/firewall settings to allow SIP/RTP traffic. Ensure the server is secured according to best practices.",
+            "dependencies": [],
+            "details": "Install Asterisk on a suitable cloud or on-premises server, update the system, install required packages, and configure firewall rules to permit SIP and RTP. Harden the server by disabling unnecessary services and applying security patches.",
+            "status": "pending",
+            "testStrategy": "Verify Asterisk installation by running 'asterisk -rvvv' and ensure SIP/RTP ports are accessible from test endpoints."
+          },
+          {
+            "id": 2,
+            "title": "Configure Multi-Tenant SaaS Architecture in Asterisk",
+            "description": "Implement multi-tenancy in Asterisk to ensure tenant isolation for call routing, recording, and analytics. Integrate with backend services to support SaaS operations.",
+            "dependencies": [
+              1
+            ],
+            "details": "Set up separate contexts and dialplans for each tenant in Asterisk configuration files. Integrate with backend databases or APIs to dynamically manage tenant-specific settings and resources.",
+            "status": "pending",
+            "testStrategy": "Create test tenants and confirm that calls, recordings, and analytics are isolated per tenant."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Twilio Elastic SIP Trunk with Asterisk",
+            "description": "Set up Twilio Elastic SIP Trunk for PSTN connectivity, configure SIP credentials, and define trunk settings in Asterisk for secure communication.",
+            "dependencies": [
+              1
+            ],
+            "details": "Configure Twilio trunk in the Twilio console with proper ACLs and URIs. Update Asterisk's sip.conf or pjsip.conf to define the trunk, enable TLS/SRTP, and set up IP authentication.",
+            "status": "pending",
+            "testStrategy": "Place inbound and outbound test calls through the Twilio trunk and verify call establishment and media security."
+          },
+          {
+            "id": 4,
+            "title": "Enable WebRTC and Frontend Softphone Integration",
+            "description": "Configure Asterisk for WebRTC support and develop a frontend softphone component that connects via WebRTC, supporting call initiation, status, and media streaming.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Edit Asterisk's http.conf and sip.conf/pjsip.conf to enable WebRTC features (encryption, ICE, websocket transport). Implement or integrate a WebRTC softphone in the frontend application.",
+            "status": "pending",
+            "testStrategy": "Connect to Asterisk using the softphone, initiate and receive calls, and verify audio/video streams function correctly."
+          },
+          {
+            "id": 5,
+            "title": "Implement Monitoring, Logging, and Documentation",
+            "description": "Set up monitoring for call quality, uptime, and security. Ensure comprehensive logging of call events and update documentation for the new infrastructure.",
+            "dependencies": [
+              4
+            ],
+            "details": "Deploy monitoring tools (e.g., Grafana, Prometheus) for Asterisk metrics, configure log aggregation, and document setup, configuration, and troubleshooting procedures for Asterisk and WebRTC integration.",
+            "status": "pending",
+            "testStrategy": "Simulate call failures and security events to verify monitoring alerts and log entries. Review documentation for completeness and clarity."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-07-02T12:11:29.998Z",
-      "updated": "2025-07-04T19:30:00.000Z",
+      "updated": "2025-07-06T21:58:48.196Z",
       "description": "Tasks for master context"
     }
   }

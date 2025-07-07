@@ -1,55 +1,55 @@
 # Task ID: 4
-# Title: Click-to-Call UI Integration in RD Station CRM
+# Title: Integrate Twilio Voice: Endpoints, Webhooks, Metadata, and SDK Configuration
 # Status: pending
-# Dependencies: 2, 3
-# Priority: medium
-# Description: Develop and integrate a click-to-call button within RD Station CRM interface.
+# Dependencies: 1, 3
+# Priority: high
+# Description: Implement endpoints to initiate voice calls via Twilio, receive and process Twilio Voice webhooks, store call metadata, configure the Twilio SDK, validate phone numbers, handle errors, and manage credentials via environment variables.
 # Details:
-If possible, use RD Station marketplace integration to inject UI. Otherwise, develop a Chrome Extension to inject a 'Ligar' button next to phone numbers in CRM. Button triggers backend call initiation. Show call status (calling, connected, ended) in a simple overlay.
+1. Install and configure the Twilio Node.js SDK, ensuring credentials (Account SID, Auth Token) are securely loaded from environment variables. 2. Implement an endpoint to initiate outbound calls using the Twilio REST API, accepting validated phone numbers as input and handling errors gracefully. 3. Set up endpoints to receive Twilio Voice webhooks (e.g., call status callbacks), ensuring secure HTTPS and verification of Twilio requests. 4. Parse and store relevant call metadata (such as call SID, status, timestamps, and phone numbers) in the database using Prisma. 5. Implement phone number validation logic to ensure only valid, supported numbers are used for outbound calls. 6. Provide robust error handling and logging for all Twilio interactions. 7. Document required environment variables and update .env.example accordingly. 8. Follow Twilio's best practices for webhook security and response handling, including returning appropriate HTTP status codes and, where required, TwiML responses.
 
 # Test Strategy:
-Test button injection and call flow in RD Station CRM. Validate call status updates and overlay visibility.
+- Write unit and integration tests for the call initiation endpoint, including validation and error scenarios. - Use Twilio's test credentials and mock webhooks to simulate incoming events and verify webhook endpoint behavior. - Confirm that call metadata is correctly stored in the database for both outbound and inbound calls. - Manually test with real Twilio numbers to ensure end-to-end functionality. - Check that environment variables are loaded and credentials are not hardcoded. - Review logs for error handling and security compliance. - Use tools like Postman or curl to send mock webhook requests and validate responses.
 
 # Subtasks:
-## 1. Marketplace Integration Research [pending]
+## 1. Install and Configure Twilio SDK [pending]
 ### Dependencies: None
-### Description: Investigate available CRM or marketplace platforms for click-to-call integration, including API capabilities, authentication requirements, and UI compatibility.
+### Description: Set up the Twilio SDK in the project environment, securely configure credentials, and verify connectivity with Twilio services.
 ### Details:
-Identify supported platforms, document integration prerequisites, and gather SDK or API documentation relevant to click-to-call functionality.
+Install the official Twilio SDK for your programming language. Store the Account SID and Auth Token securely (e.g., environment variables). Test the connection by making a simple API call to Twilio.
 
-## 2. Chrome Extension Development [pending]
+## 2. Implement Call Initiation Endpoint (POST /call) [pending]
 ### Dependencies: 4.1
-### Description: Develop the foundational Chrome extension to support click-to-call UI injection and event handling within the browser.
+### Description: Develop an authenticated POST endpoint to initiate outbound calls using the Twilio SDK.
 ### Details:
-Set up the extension manifest, permissions, and background/service worker scripts. Ensure the extension can access and modify the target CRM or marketplace pages.
+Create the /call endpoint. Accept parameters such as destination phone number and caller ID. Use the Twilio SDK to initiate the call and handle the response.
 
-## 3. UI Injection Logic [pending]
+## 3. Implement Webhook Endpoint (/twilio/webhook) [pending]
+### Dependencies: 4.1
+### Description: Create an endpoint to receive and process Twilio webhook events related to call status and events.
+### Details:
+Develop the /twilio/webhook endpoint to handle POST requests from Twilio. Parse incoming event data and respond with appropriate status codes.
+
+## 4. Store Call Metadata in Supabase [pending]
+### Dependencies: 4.2, 4.3
+### Description: Persist call metadata (e.g., call SID, status, timestamps, participants) in the 'calls' table of Supabase.
+### Details:
+Design the schema for the 'calls' table if not already present. Insert or update call records based on webhook events and call initiation responses.
+
+## 5. Phone Number Validation and Error Handling [pending]
 ### Dependencies: 4.2
-### Description: Implement logic within the extension to inject click-to-call UI elements (e.g., call button, overlays) into the target web application’s DOM.
+### Description: Implement validation for phone numbers and robust error handling for all endpoints.
 ### Details:
-Determine appropriate DOM locations for UI injection, ensure unique identifiers for components, and handle dynamic page content.
+Validate phone numbers using regex or Twilio Lookup API. Handle errors from Twilio API calls and webhook processing, returning meaningful error messages.
 
-## 4. Button Event Handling [pending]
-### Dependencies: 4.3
-### Description: Develop event listeners and handlers for the injected click-to-call button and related UI controls (e.g., hang up, mute, keypad).
+## 6. Logging and Monitoring [pending]
+### Dependencies: 4.2, 4.3, 4.5
+### Description: Integrate logging and monitoring for call initiation, webhook events, and error scenarios.
 ### Details:
-Ensure button clicks trigger the correct frontend logic and prepare data for backend call initiation. Handle UI state changes and error/success feedback.
+Log all incoming requests, responses, and errors. Set up monitoring/alerting for failures or suspicious activity. Ensure logs do not expose sensitive information.
 
-## 5. Backend Call Trigger [pending]
-### Dependencies: 4.4
-### Description: Implement the backend logic to initiate phone calls when the click-to-call button is activated, interfacing with telephony APIs or services.
+## 7. Documentation and Usage Examples [pending]
+### Dependencies: 4.2, 4.3, 4.4, 4.5, 4.6
+### Description: Document the API endpoints, configuration steps, and provide usage examples for developers.
 ### Details:
-Set up secure API endpoints, manage authentication (e.g., JWT tokens), and handle call initiation requests from the frontend.
-
-## 6. Call Status Overlay [pending]
-### Dependencies: 4.5
-### Description: Create and manage a UI overlay that displays real-time call status, including dialing, connected, error, and hang-up states.
-### Details:
-Update the overlay based on backend responses and user actions. Ensure accessibility and non-intrusive design.
-
-## 7. End-to-End Flow Testing [pending]
-### Dependencies: None
-### Description: Conduct comprehensive end-to-end testing of the click-to-call integration, covering UI injection, event handling, backend call initiation, and status overlays.
-### Details:
-Automate tests using browser testing libraries (e.g., Puppeteer, Selenium), simulate user interactions, and validate the complete user journey.
+Write clear documentation for endpoint usage, request/response formats, error codes, and setup instructions. Include example requests and responses.
 

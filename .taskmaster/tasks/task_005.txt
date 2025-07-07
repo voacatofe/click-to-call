@@ -1,11 +1,61 @@
 # Task ID: 5
-# Title: Automatic Call Logging in CRM
+# Title: Develop Reusable React Dialer Component with State Management and Backend Integration
 # Status: pending
-# Dependencies: 2, 3
+# Dependencies: 1, 4
 # Priority: medium
-# Description: Automatically log call details as activities/notes in RD Station CRM.
+# Description: Create a reusable React component for a frontend dialer that manages idle, calling, and connected states, integrates with backend services via REST and WebSocket, supports embedding and Chrome extension use, and includes comprehensive UI tests and Storybook documentation. Leverage Supabase UI Library (shadcn/ui) for authentication, real-time status, recent calls, and file uploads as appropriate.
 # Details:
-On call completion, backend receives event from Twilio. Fetch call metadata (duration, result, recording URL). Create activity/note in RD Station CRM via API. Include call details and link to recording if available.
+Design and implement a React component that encapsulates dialer logic, managing its own state transitions (idle, calling, connected) and exposing props/callbacks for parent integration. Integrate with backend endpoints for call initiation and status updates using REST (for call setup) and WebSocket (for real-time call events). Use Supabase UI Library (shadcn/ui) components via Supabase UI for authentication (Password-based Authentication block) if the frontend requires internal login. Display call status and recent calls using Supabase Realtime and Infinite Query Hook components. For uploading call recordings or attachments, utilize the File Upload block integrated with Supabase Storage. Ensure the component is embeddable in other React apps and architect it for compatibility with a potential Chrome extension (e.g., by avoiding direct DOM manipulation and using message passing for extension communication). Provide clear prop types and documentation for extensibility. Implement UI tests using a framework like React Testing Library and document usage scenarios in Storybook, including state transitions and backend integration mocks. Consider accessibility and responsive design throughout.
 
 # Test Strategy:
-Test end-to-end flow: call → event → log creation in CRM. Verify all metadata is correctly stored.
+Write unit and integration tests for all dialer states and transitions, mocking REST and WebSocket interactions. Use React Testing Library to simulate user actions (dial, hang up, receive call events) and verify UI updates. Validate embeddability by rendering the component in a test harness and in Storybook with various props. Ensure Storybook stories cover all states and backend integration scenarios. If feasible, prototype Chrome extension embedding and verify communication via message passing. Confirm accessibility compliance using automated tools (e.g., axe). Test Supabase UI integration by mocking authentication, real-time updates, infinite queries, and file uploads.
+
+# Subtasks:
+## 1. Install Supabase UI and shadcn/ui Dependencies [pending]
+### Dependencies: None
+### Description: Add @supabase/auth-ui-react and shadcn/ui packages to the project to enable Supabase UI components and theming.
+### Details:
+Run npm or yarn commands to install @supabase/auth-ui-react and shadcn/ui. Ensure compatibility with your React version.
+
+## 2. Configure Supabase UI Theme [pending]
+### Dependencies: 5.1
+### Description: Set up and customize the theme for Supabase UI components using shadcn/ui and Tailwind CSS conventions.
+### Details:
+Follow Supabase UI Library and shadcn/ui documentation to configure theme settings, colors, and typography for consistent UI appearance.
+
+## 3. Integrate Password Authentication Block [pending]
+### Dependencies: 5.2
+### Description: Implement the password-based authentication component from Supabase UI for user sign-in and sign-up flows.
+### Details:
+Add and configure the Auth component, connect it to your Supabase project, and ensure proper handling of authentication states.
+
+## 4. Implement Call Status and Recent Calls Components with Realtime and Infinite Query [pending]
+### Dependencies: 5.3
+### Description: Develop UI components to display call status and recent calls, leveraging Supabase Realtime and infinite query patterns for live updates.
+### Details:
+Use Supabase Realtime subscriptions and TanStack Query (or similar) for efficient data fetching and live updates.
+
+## 5. Integrate File Upload Block for Recordings and Attachments [pending]
+### Dependencies: 5.4
+### Description: Add and configure the File Upload Dropzone component from Supabase UI to handle user uploads of recordings and attachments.
+### Details:
+Ensure correct storage bucket configuration and permissions in Supabase, and connect the upload component to backend storage.
+
+## 6. Develop Backend Integration (REST and WebSocket) [pending]
+### Dependencies: 5.5
+### Description: Implement REST API and WebSocket connections for backend communication, supporting authentication, call data, and file uploads.
+### Details:
+Set up API endpoints and WebSocket listeners, handle authentication tokens, and ensure secure, real-time data flow.
+
+## 7. Write UI Tests with React Testing Library and Storybook Coverage [pending]
+### Dependencies: None
+### Description: Create comprehensive UI tests for all components using React Testing Library, and ensure Storybook stories provide adequate coverage.
+### Details:
+Write test cases for authentication, call status, file upload, and integration flows. Validate Storybook stories for all UI states.
+
+## 8. Document Props, Usage Examples, Embedding, and Chrome Extension Integration [pending]
+### Dependencies: None
+### Description: Produce documentation for all components, including prop tables, usage examples, embedding instructions, and Chrome extension integration guidelines.
+### Details:
+Use Storybook Docs and markdown files to document component APIs, provide code samples, and explain how to embed or extend components in Chrome extensions.
+

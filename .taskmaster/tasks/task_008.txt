@@ -1,11 +1,65 @@
 # Task ID: 8
-# Title: Onboarding, Documentation, and Support Materials
+# Title: Develop Metrics Dashboard with React, Chart.js, Aggregated API, and JWT Authentication
 # Status: pending
-# Dependencies: 1
-# Priority: medium
-# Description: Create self-service onboarding, documentation, and support resources.
+# Dependencies: 1, 3
+# Priority: low
+# Description: Create a metrics dashboard in React that visualizes call volume, duration, success rate, and agent ranking using Chart.js, with backend aggregation, JWT authentication, and integrated deployment.
 # Details:
-Develop step-by-step onboarding guides for admins and users. Create FAQ and help articles. Implement in-app tooltips and support links. Prepare materials for email and LinkedIn campaigns targeting ex-Zenvia users.
+1. Design and implement a backend API endpoint (Node.js/Express) that aggregates call data from the database, calculating total call volume, average/total duration, success rate, and agent rankings. Ensure efficient queries and proper data shaping for frontend consumption.
+2. Secure the API with JWT authentication, requiring a valid token for all dashboard data requests.
+3. In the React frontend, set up a dashboard page using a grid layout. Use react-chartjs-2 and Chart.js to render visualizations: bar/line charts for volume and duration, pie/donut for success rate, and a leaderboard for agent ranking.
+4. Fetch aggregated metrics from the backend API, handling loading and error states. Display summary cards for key metrics and interactive charts for trends and rankings.
+5. Ensure the dashboard is responsive and visually polished, with clear legends, tooltips, and accessible color schemes.
+6. Integrate the dashboard into the existing frontend app, protecting the route with JWT-based authentication (e.g., using React context or a higher-order component).
+7. Prepare Dockerfile updates and deployment scripts to ensure the dashboard and backend API are deployed together, with environment variables for API URLs and JWT secrets.
 
 # Test Strategy:
-Validate onboarding flow with test users. Review documentation for clarity and completeness.
+- Write backend unit and integration tests for aggregation logic, including edge cases (e.g., no data, partial failures).
+- Test JWT authentication by attempting API access with valid, invalid, and expired tokens.
+- In the frontend, use React Testing Library to verify correct rendering of charts and summary cards given mock API responses.
+- Manually test dashboard responsiveness, chart interactivity, and authentication flow.
+- Deploy to a staging environment and verify end-to-end data flow, chart rendering, and secure access.
+
+# Subtasks:
+## 1. Implement Backend /metrics Aggregation Endpoint [pending]
+### Dependencies: None
+### Description: Create a backend endpoint at /metrics that aggregates call data stored in Supabase, exposing relevant metrics for dashboard consumption.
+### Details:
+Design and implement a RESTful endpoint that queries Supabase for call data, aggregates the results (e.g., counts, averages), and returns them in a structured format suitable for frontend visualization. Ensure the endpoint is performant and scalable.
+
+## 2. Add JWT Authentication Guard [pending]
+### Dependencies: 8.1
+### Description: Secure the /metrics endpoint using JWT authentication to ensure only authorized users can access aggregated metrics.
+### Details:
+Integrate JWT verification middleware in the backend. Validate tokens on each request to /metrics, rejecting unauthorized access. Document the expected JWT claims and token acquisition process.
+
+## 3. Design React Dashboard Layout with shadcn/ui [pending]
+### Dependencies: 8.2
+### Description: Develop the main dashboard layout in React using shadcn/ui components for a consistent and modern UI.
+### Details:
+Structure the dashboard page, including navigation, header, and content areas. Use shadcn/ui for styling and layout primitives. Ensure responsiveness and accessibility.
+
+## 4. Integrate Chart.js for Data Visualization [pending]
+### Dependencies: 8.3
+### Description: Embed Chart.js components into the dashboard to visualize aggregated metrics data.
+### Details:
+Configure Chart.js charts (e.g., line, bar, pie) within the dashboard layout. Map backend data to chart datasets and ensure charts update dynamically based on fetched data.
+
+## 5. Implement Data Fetching and Caching with TanStack Query [pending]
+### Dependencies: 8.4
+### Description: Set up React hooks using TanStack Query to fetch and cache metrics data from the backend API.
+### Details:
+Create custom hooks for API calls to /metrics, leveraging TanStack Query for caching, refetching, and error handling. Optimize for minimal re-renders and efficient data updates.
+
+## 6. Protect Dashboard Route and Add UI Tests [pending]
+### Dependencies: 8.5
+### Description: Ensure the dashboard route is protected by authentication and implement UI tests for route protection and component rendering.
+### Details:
+Add route guards in the frontend to restrict access to authenticated users. Write automated UI tests to verify route protection, correct rendering of charts, and error states.
+
+## 7. Create Deployment Scripts and Documentation [pending]
+### Dependencies: None
+### Description: Develop scripts and documentation for deploying the dashboard and backend, including environment setup and configuration.
+### Details:
+Write deployment scripts (e.g., Docker, CI/CD) and comprehensive documentation covering environment variables, build steps, and post-deployment verification. Ensure reproducibility and clarity for future maintainers.
+

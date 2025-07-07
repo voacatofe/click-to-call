@@ -1,61 +1,67 @@
 # Task ID: 3
-# Title: Twilio (or CPaaS) Voice API Integration
+# Title: Implement Node.js/Express API with TypeScript, Prisma, PostgreSQL, and RD Station OAuth Integration
 # Status: pending
 # Dependencies: 1
-# Priority: medium
-# Description: Integrate Twilio (or equivalent CPaaS) for initiating and managing VoIP calls.
+# Priority: high
+# Description: Desenvolver o backend core da API utilizando Node.js, Express e TypeScript, integrando Supabase (PostgreSQL) via @supabase/supabase-js ou chamadas SQL diretas, e implementar integração com a RD CRM API v1 via autenticação por token simples (sem OAuth2). O sistema será B2B, com ponto de configuração único para o token da empresa, herdado por todos os usuários. Incluir endpoints para cadastro/atualização do token, além de endpoints RESTful para operações de contatos, tarefas, anotações e logging de chamadas, respeitando limites de requisição da RD CRM.
 # Details:
-Set up Twilio account and obtain API keys. Implement backend endpoints to initiate calls (WebRTC and call bridging). Use Twilio SDK for Node.js. Handle call events (answered, completed, failed) via webhooks. Store call metadata.
+1. Inicializar um novo projeto Node.js com TypeScript e Express. Configurar TypeScript e scripts para builds de desenvolvimento e produção. 2. Definir schema SQL no Supabase para contatos, tarefas, anotações, chamadas e configuração (incluindo campo rd_token criptografado e data de expiração opcional). Gerar tipos TypeScript via Supabase CLI. 3. Implementar módulo de integração com RD CRM API v1: criar funções para criar contatos, tarefas, anotações e logar eventos de chamada concluída, sempre incluindo o header Authorization: Token <token> em todas as chamadas. 4. Criar endpoint seguro (acesso restrito a admin) para cadastrar/atualizar o token RD CRM. 5. Desenvolver middleware ou service para injetar o token nas requisições à RD CRM. 6. Implementar controle para respeitar o limite de 120 requisições por minuto à RD CRM. 7. Desenvolver endpoints RESTful para CRUD de contatos, tarefas, anotações e logging de chamadas, com validação e tratamento de erros, utilizando o client Supabase (service role key) para operações server-side seguras. 8. Escrever testes unitários para o client de integração RD CRM e testes de integração para os endpoints. 9. Documentar endpoints da API, fluxo de integração e configuração do token para referência futura e integração frontend.
 
 # Test Strategy:
-Test call initiation and event handling with test numbers. Verify webhook integration and call metadata storage.
+- Executar testes unitários para o client de integração RD CRM, incluindo cenários de erro e limites de requisição. - Realizar testes de integração para os endpoints CRUD e de logging, verificando operações no banco e controle de acesso. - Testar manualmente o fluxo de configuração do token RD CRM e as operações de integração usando um token válido de teste. - Validar que contatos, tarefas, anotações e logs de chamadas podem ser criados, lidos, atualizados e removidos via API, e que todos os endpoints respeitam autenticação e autorização conforme necessário. - Revisar documentação da API e confirmar que o comportamento dos endpoints está de acordo com as especificações.
 
 # Subtasks:
-## 1. Twilio Account Setup [pending]
+## 1. Scaffold Node/TS Project [pending]
 ### Dependencies: None
-### Description: Create and configure a Twilio account to enable access to the Voice API and related services.
+### Description: Set up a new Node.js project with TypeScript, including necessary dependencies and configurations.
 ### Details:
-Sign up for a Twilio account, verify your email, and complete any required onboarding steps. Obtain your Account SID and Auth Token from the Twilio Console.
+Use tools like npm and TypeScript to create a basic project structure.
 
-## 2. API Key Management [pending]
-### Dependencies: 3.1
-### Description: Generate and securely store Twilio API keys for authenticating API requests.
+## 2. Define SQL Schema for Supabase [pending]
+### Dependencies: None
+### Description: Design and implement SQL tables for contacts, tasks, notes, calls, and config in Supabase.
 ### Details:
-Create API keys and secrets in the Twilio Console. Store them securely in environment variables or a secrets manager. Use API keys for authentication in production environments as recommended by Twilio.
+Use Supabase's SQL interface to create the necessary tables.
 
-## 3. Backend Endpoint for Call Initiation [pending]
+## 3. Generate TypeScript Types via Supabase CLI and CI Script [pending]
 ### Dependencies: 3.2
-### Description: Develop a backend endpoint to initiate outbound calls using the Twilio Voice API.
+### Description: Use Supabase CLI to generate TypeScript types for the defined schema and integrate with CI scripts.
 ### Details:
-Implement an API endpoint (e.g., RESTful POST) that receives call initiation requests and uses the Twilio SDK or REST API to create calls. Ensure proper authentication and error handling.
+Automate type generation using Supabase CLI and CI tools.
 
-## 4. WebRTC Integration [pending]
-### Dependencies: 3.3
-### Description: Integrate Twilio's WebRTC SDK to enable real-time voice communication in the client application.
+## 4. Implement RD CRM Client with Token-Based Authentication and Rate Limiting [pending]
+### Dependencies: None
+### Description: Create a client for RD CRM using token-based authentication and implement rate limiting.
 ### Details:
-Install and configure the Twilio Voice SDK for Web or mobile platforms. Set up client-side logic to connect to calls using WebRTC, handling media streams and device permissions.
+Use libraries like axios for HTTP requests and implement rate limiting using middleware.
 
-## 5. Call Event Webhook Handling [pending]
-### Dependencies: 3.3
-### Description: Implement webhook endpoints to receive and process call event notifications from Twilio.
+## 5. Admin Endpoint for Saving/Updating Encrypted Token [pending]
+### Dependencies: 3.4
+### Description: Develop an admin endpoint to securely save and update encrypted tokens.
 ### Details:
-Create HTTP endpoints to handle Twilio webhook POST requests for call events (e.g., call started, ringing, completed). Parse event payloads and respond with appropriate HTTP status codes.
+Use encryption libraries to securely handle tokens.
 
-## 6. Call Metadata Storage [pending]
+## 6. Middleware Service for Token Injection [pending]
 ### Dependencies: 3.5
-### Description: Design and implement storage for call metadata received from Twilio webhooks and API responses.
+### Description: Implement middleware to inject tokens into requests.
 ### Details:
-Store relevant call details (e.g., call SID, from/to numbers, timestamps, status) in a database for auditing, analytics, or user-facing features.
+Use Express middleware to inject tokens into outgoing requests.
 
-## 7. SDK Usage and Helper Library Integration [pending]
-### Dependencies: 3.2
-### Description: Integrate and utilize Twilio's official SDKs and helper libraries in the backend and client applications.
+## 7. CRUD Endpoints for Contacts, Tasks, Notes, Calls Using Supabase-js [pending]
+### Dependencies: 3.3, 3.6
+### Description: Create CRUD endpoints for managing contacts, tasks, notes, and calls using Supabase-js.
 ### Details:
-Install the appropriate Twilio SDKs (e.g., Node.js, Java, Python) and use them to interact with the Voice API, manage calls, and handle authentication.
+Use Supabase-js to interact with the database and implement CRUD operations.
 
-## 8. Test Number Validation [pending]
-### Dependencies: 3.3
-### Description: Implement logic to validate and manage test phone numbers for development and QA environments.
+## 8. Unit and Integration Tests for RD CRM Client and Endpoints [pending]
+### Dependencies: 3.4, 3.7
+### Description: Write unit tests for the RD CRM client and integration tests for the CRUD endpoints.
 ### Details:
-Configure Twilio test credentials and use Twilio-provided test numbers to simulate calls without incurring charges. Ensure validation logic prevents production calls during testing.
+Use testing frameworks like Jest for unit and integration tests.
+
+## 9. API Documentation and Token Flow [pending]
+### Dependencies: 3.7, 3.8
+### Description: Document the API endpoints and describe the token flow process.
+### Details:
+Use tools like Swagger or API Blueprint for documentation.
 

@@ -1,0 +1,61 @@
+# Task ID: 9
+# Title: Create Comprehensive Documentation, Onboarding, and Automated Docs Generation
+# Status: pending
+# Dependencies: 1, 2, 3
+# Priority: medium
+# Description: Develop a main README with dev/prod setup, Easypanel deployment guide, environment variable examples, FAQ, video tutorials, in-app popovers, marketing materials, and automate documentation generation in CI.
+# Details:
+1. Draft a detailed README.md covering project overview, local development setup, production deployment, and troubleshooting. Include step-by-step instructions for both backend and frontend, referencing Docker and docker-compose usage as established in the infrastructure tasks. 2. Write a dedicated section or separate guide for deploying the stack on Easypanel, including prerequisites (Docker, Easypanel installation), service setup, environment variable mapping, and health checks, referencing best practices from recent guides[1][2][4]. 3. Provide .env.example files for all services, with clear comments on required and optional variables. 4. Compile a FAQ addressing common developer and deployment issues. 5. Produce or curate short video tutorials for onboarding, setup, and deployment (hosted or linked). 6. Implement in-app popovers using a React library (e.g., react-tooltip or react-joyride) to guide users through key UI features. 7. Prepare a folder with marketing materials (logos, banners, elevator pitch, screenshots). 8. Integrate automated documentation generation (e.g., using Typedoc for backend, Storybook for frontend, and Markdown linting) into the CI pipeline, ensuring docs are built and published on every push to main. 9. Ensure all documentation is accessible from a central docs/ directory and linked from the README.
+
+# Test Strategy:
+- Review the README and onboarding guides for completeness, clarity, and accuracy by having a new developer follow them from scratch. - Verify that the Easypanel deployment guide works by deploying a fresh instance using the documented steps. - Check that all .env.example files are present and match the latest code requirements. - Test in-app popovers for correct display and contextual relevance in the UI. - Confirm that video tutorials are accessible and up to date. - Run the CI pipeline to ensure documentation is generated and published automatically. - Validate that marketing materials are present and correctly formatted. - Solicit feedback from at least one non-core team member to identify gaps or unclear sections.
+
+# Subtasks:
+## 1. Create Main README with Overview and Setup Instructions [pending]
+### Dependencies: None
+### Description: Draft a comprehensive README file that provides an overview of the project, key features, and detailed setup instructions for new users.
+### Details:
+Include sections such as project description, prerequisites, installation steps, usage examples, and contribution guidelines.
+
+## 2. Write Step-by-Step Easypanel Deployment Guide [pending]
+### Dependencies: 9.1
+### Description: Develop a detailed guide for deploying the application using Easypanel, covering prerequisites, installation, and initial configuration.
+### Details:
+Include instructions for server preparation, Docker installation, Easypanel setup, and accessing the dashboard. Reference best practices and troubleshooting tips.
+
+## 3. Generate Complete .env.example Files for Backend and Frontend [pending]
+### Dependencies: 9.1
+### Description: Create example environment variable files for both backend and frontend, listing all required and optional variables with comments.
+### Details:
+Ensure all sensitive values are omitted and provide clear documentation for each variable's purpose.
+
+## 4. Compile FAQ and Troubleshooting Documentation [pending]
+### Dependencies: 9.1
+### Description: Assemble a Frequently Asked Questions (FAQ) section and troubleshooting guide addressing common issues and solutions.
+### Details:
+Gather questions from user feedback, support tickets, and internal testing. Organize by topic for easy navigation.
+
+## 5. Prepare Video Tutorial Scripts and Upload Process [pending]
+### Dependencies: 9.1
+### Description: Write scripts for onboarding and feature walkthrough video tutorials, and outline the process for recording and uploading them.
+### Details:
+Identify key user journeys to cover, draft concise scripts, and specify platforms for video hosting and embedding.
+
+## 6. Develop In-App Popovers and Onboarding Content (JSON) [pending]
+### Dependencies: 9.1
+### Description: Design and structure onboarding popovers and tooltips as JSON content for integration into the application UI.
+### Details:
+Map onboarding steps to UI components, write concise instructional text, and ensure localization readiness.
+
+## 7. Create Marketing Materials (Slides/PDF) for Product Overview [pending]
+### Dependencies: 9.1
+### Description: Design marketing collateral such as slide decks and PDFs that summarize the product's value proposition and features.
+### Details:
+Include visuals, key benefits, use cases, and contact information. Ensure materials are suitable for both digital and print distribution.
+
+## 8. Configure CI for Automated Documentation Generation and Publishing [pending]
+### Dependencies: 9.1
+### Description: Set up continuous integration workflows to automatically generate documentation (Typedoc, Swagger, Storybook) and publish to GitHub Pages.
+### Details:
+Integrate documentation tools into the CI pipeline, automate builds on push, and ensure deployment to the correct GitHub Pages branch.
+

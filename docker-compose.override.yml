@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  cert-generator:
+    image: alpine:3.18
+    volumes:
+      - ./asterisk/certs:/certs
+    command: >
+      sh -c "apk add --no-cache openssl &&
+             if [ ! -f /certs/privkey.pem ]; then
+               openssl req -x509 -newkey rsa:2048 -nodes \
+                 -keyout /certs/privkey.pem \
+                 -out /certs/fullchain.pem \
+                 -days 365 -subj '/CN=localhost';
+             fi"
+  
+  asterisk:
+    build:
+      context: ./asterisk
+    container_name: asterisk-clicktocall
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./asterisk/etc:/etc/asterisk
+      - ./asterisk/sounds:/var/lib/asterisk/sounds
+      - ./asterisk/recordings:/var/spool/asterisk/monitor
+      - ./asterisk/certs:/etc/asterisk/keys
+    environment:
+      - ASTERISK_UID=1000
+      - ASTERISK_GID=1000 

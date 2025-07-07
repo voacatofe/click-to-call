@@ -1,49 +1,96 @@
 # Task ID: 1
-# Title: Setup Project Repository and Initial Stack
+# Title: Set Up Docker Infrastructure and CI for Backend and Frontend
 # Status: pending
 # Dependencies: None
-# Priority: medium
-# Description: Initialize project repository with Node.js/TypeScript backend and React frontend, set up CI/CD pipeline, and define initial project structure.
+# Priority: high
+# Description: Create Dockerfiles for Node/Express backend (without Prisma) and React frontend, a docker-compose.yml for local development (without a local database), and configure GitHub Actions to build and push images to a Docker registry. Use Supabase (paid plan) as the database provider. Provide .env.example files with Supabase-related environment variables. Document usage of Supabase CLI for local development, migrations, and seeding. Ensure CI generates TypeScript types from Supabase schema.
 # Details:
-Create a new GitHub repository. Initialize with Node.js/TypeScript for backend (using Express or NestJS), React for frontend. Set up GitHub Actions for CI/CD. Configure linting, testing, and code formatting. Define folder structure for backend (src, tests, config) and frontend (src, public, components).
+1. Create a Dockerfile for the backend (Node/Express, no Prisma):
+   - Use an official Node.js base image.
+   - Copy source code, install dependencies, and build the app.
+   - Set up the entrypoint for the backend server.
+   - Health-check scripts should verify remote Supabase connection.
+   - No Prisma installation or commands required.
+2. Create a Dockerfile for the frontend (React):
+   - Use a Node.js image for build, then optionally a lightweight web server (e.g., nginx) for serving static files.
+   - Copy source code, install dependencies, build the React app, and configure the server to serve the build output.
+3. Write a docker-compose.yml to orchestrate backend and frontend for local development (remove any local 'db' service).
+   - Define only backend and frontend services, networks, and volumes as needed.
+   - Map ports for easy access.
+4. Prepare .env.example files for both backend and frontend, listing all required environment variables with placeholder values. For backend, include:
+   - SUPABASE_URL
+   - SUPABASE_ANON_KEY
+   - SUPABASE_SERVICE_ROLE_KEY
+   - DATABASE_URL (Supabase connection string with sslmode=require)
+   - SUPABASE_PROJECT_ID (for type generation)
+5. Configure GitHub Actions workflows:
+   - Set up jobs to build Docker images for backend and frontend on push to main or release branches.
+   - Authenticate with Docker Registry or GitHub Container Registry (GHCR).
+   - (Optional) Before building backend image, run `supabase db push` (Supabase CLI) to apply SQL migrations from `supabase/migrations`.
+   - Run `supabase gen types typescript --project-id <env SUPABASE_PROJECT_ID> > src/types/supabase.ts` in CI to generate TypeScript types from Supabase schema.
+   - Push built images with appropriate tags (e.g., commit SHA, latest).
+   - Use secrets for registry credentials and Supabase connection info.
+6. Document usage instructions in the repository README, including:
+   - How to build, run, and configure the containers locally and via CI.
+   - How to use the Supabase CLI (`supabase start`) for local development and seeding (optional, since production uses remote Supabase).
+   - How to apply migrations and generate types using the Supabase CLI.
 
 # Test Strategy:
-Verify repository setup by running initial linting and test scripts. Ensure CI/CD pipeline triggers on push.
+- Build both Docker images locally and verify containers start without errors.
+- Use docker-compose up to ensure backend and frontend services start and communicate as expected (no local db service).
+- Check that environment variables are correctly loaded from .env files, especially Supabase credentials.
+- Trigger GitHub Actions workflows and confirm successful build and push of images to the registry.
+- Ensure CI pipeline runs `supabase db push` (optional) to apply migrations from `supabase/migrations`.
+- Ensure CI pipeline runs `supabase gen types typescript --project-id <env SUPABASE_PROJECT_ID> > src/types/supabase.ts` and that generated types are up to date.
+- Pull images from the registry and run them independently to verify they function as expected with remote Supabase.
+- Review .env.example files for completeness and accuracy, including all Supabase variables.
 
 # Subtasks:
-## 1. Create Project Repository [pending]
+## 1. Create Backend Dockerfile [pending]
 ### Dependencies: None
-### Description: Set up a new repository in the chosen version control system (e.g., GitHub), including a README file and initial security settings.
+### Description: Develop a Dockerfile for the backend service, specifying the base image, dependencies, build steps, and runtime configuration.
 ### Details:
-Initialize the repository, add a README to communicate project details, and configure basic security features such as branch protection and secret scanning.
+Ensure the Dockerfile supports multi-stage builds if needed, exposes the correct ports, and is optimized for production.
 
-## 2. Define Folder Structure [pending]
-### Dependencies: 1.1
-### Description: Establish a clear and organized folder structure for backend, frontend, and shared resources.
+## 2. Create Frontend Dockerfile [pending]
+### Dependencies: None
+### Description: Develop a Dockerfile for the frontend service, detailing the build process, static asset handling, and runtime environment.
 ### Details:
-Create directories for backend, frontend, and any shared modules or documentation. Ensure the structure supports scalability and maintainability.
+Include steps for dependency installation, building the frontend, and serving the application (e.g., with nginx or node).
 
-## 3. Initialize Backend Stack [pending]
-### Dependencies: 1.2
-### Description: Set up the backend framework, initialize dependencies, and create starter files.
+## 3. Write docker-compose.yml [pending]
+### Dependencies: 1.1, 1.2
+### Description: Define a docker-compose.yml file to orchestrate backend, frontend, and Supabase services, including networking and dependencies.
 ### Details:
-Choose a backend technology (e.g., Node.js, Python), initialize the project (e.g., npm init), and set up entry points and configuration files.
+Configure service healthchecks, environment variables, volumes, and inter-service dependencies as needed for local development and CI.
 
-## 4. Initialize Frontend Stack [pending]
-### Dependencies: 1.2
-### Description: Set up the frontend framework, initialize dependencies, and create starter files.
+## 4. Generate .env.example Files [pending]
+### Dependencies: 1.3
+### Description: Create .env.example files for backend, frontend, and docker-compose, listing all required environment variables with placeholder values.
 ### Details:
-Choose a frontend technology (e.g., React, Vue), initialize the project (e.g., create-react-app), and set up entry points and configuration files.
+Ensure all sensitive values are omitted and document the purpose of each variable for developers.
 
-## 5. Configure Linting and Testing [pending]
+## 5. Configure GitHub Actions Workflow [pending]
 ### Dependencies: 1.3, 1.4
-### Description: Set up linting and testing tools for both backend and frontend to ensure code quality and consistency.
+### Description: Set up a GitHub Actions workflow to build, test, and deploy Docker containers, and run Supabase CLI commands as part of CI/CD.
 ### Details:
-Install and configure linters (e.g., ESLint, Prettier) and testing frameworks (e.g., Jest, Mocha) for both backend and frontend codebases.
+Include steps for checking out code, building images, running tests, pushing images, and deploying Supabase migrations or functions using the setup-cli action[1][3][5].
 
-## 6. Set Up CI/CD Pipeline [pending]
+## 6. Document Supabase CLI Usage [pending]
 ### Dependencies: 1.5
-### Description: Implement a CI/CD pipeline to automate building, testing, and deploying the application.
+### Description: Write documentation on how to use the Supabase CLI for local development, migrations, and CI/CD integration.
 ### Details:
-Configure a CI/CD tool (e.g., GitHub Actions) to run builds, tests, linting, and deployments on code changes, ensuring automated quality checks and deployments.
+Cover installation, authentication, common commands, and integration points with the workflow[1][3][5].
+
+## 7. Implement TypeScript Type Generation in CI [pending]
+### Dependencies: 1.5, 1.6
+### Description: Automate the generation of TypeScript types from Supabase schemas as part of the CI pipeline.
+### Details:
+Add steps to the workflow to run Supabase type generation commands and validate that generated types are up to date.
+
+## 8. Write README Instructions [pending]
+### Dependencies: 1.4, 1.6, 1.7
+### Description: Draft comprehensive README instructions covering setup, environment configuration, Docker usage, CI/CD, and Supabase integration.
+### Details:
+Include sections for prerequisites, local development, deployment, troubleshooting, and links to further documentation.
 

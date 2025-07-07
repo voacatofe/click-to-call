@@ -1,5 +1,5 @@
 {
-  "name": "click-to-call-v2",
+  "name": "click-to-call",
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -8,14 +8,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
+    "prettier": "^3.2.5",
     "turbo": "latest"
   },
+  "packageManager": "pnpm@8.6.10",
   "engines": {
     "node": ">=18"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
-}
+  }
+} 
