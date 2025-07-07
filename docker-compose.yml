@@ -29,7 +29,11 @@ services:
       context: ./asterisk
     container_name: asterisk-clicktocall
     restart: unless-stopped
-    network_mode: host  # Required for RTP media streaming
+    ports:
+      - "5038:5038"      # Asterisk Manager Interface (AMI)
+      - "8088:8088"      # WebSocket (WS) for SIP signaling
+      - "8089:8089"      # WebSocket Secure (WSS) for SIP signaling
+      - "10000-20000:10000-20000/udp" # RTP media ports
     volumes:
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
@@ -38,8 +42,10 @@ services:
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
+    networks:
+      - clicktocall-network
     healthcheck:
-      test: ["CMD", "asterisk", "-rx", "core show version"]
+      test: ["CMD-SHELL", "asterisk -rx 'core show version' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,23 +62,19 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    environment:
-      - ASTERISK_HOST=asterisk
     env_file:
       - ./apps/api/.env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       asterisk:
         condition: service_healthy
+    networks:
+      - clicktocall-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    networks:
-      - clicktocall-network
 
   # =============================================================================
   # Frontend Web Application
@@ -90,22 +92,22 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      - clicktocall-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    networks:
-      - clicktocall-network
 
 # =============================================================================
 # Networks Configuration
 # =============================================================================
 networks:
   clicktocall-network:
-    driver: bridge
     name: clicktocall-network
+    driver: bridge
 
 # =============================================================================
 # Volumes Configuration
