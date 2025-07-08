@@ -7,106 +7,207 @@ export const Softphone = () => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
   const uaRef = useRef<JsSIP.UA | null>(null);
-  // Usando 'any' como uma solução pragmática para a referência da sessão
   const sessionRef = useRef<any>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const agentId = 'agent-1001';
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
+  const createUA = (): JsSIP.UA => {
+    const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
+    const port = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
+    const wsUrl = `wss://${host}:${port}/ws`;
+    
+    console.log(`[SIP] Criando UA com WSS:`, { url: wsUrl });
 
-    const socket = new JsSIP.WebSocketInterface(`wss://${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}:${process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089'}/ws`);
-    // Removendo a tipagem explícita para evitar o erro do linter
+    const socket = new JsSIP.WebSocketInterface(wsUrl);
+    
     const configuration = {
-      sockets: [socket], // O cast para Socket pode ser necessário se o linter reclamar
-      uri: `sip:${agentId}@clicktocall.local`, // Usar o mesmo realm do pjsip.conf
+      sockets: [socket],
+      uri: `sip:${agentId}@clicktocall.local`,
       password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
       register: true
     };
 
-    const ua = new JsSIP.UA(configuration);
-    uaRef.current = ua;
+    return new JsSIP.UA(configuration);
+  };
 
-    ua.on('registered', () => setStatus('Registrado'));
-    ua.on('unregistered', () => setStatus('Não Registrado'));
-    // Usando 'any' para o tipo do evento
-    ua.on('registrationFailed', (e: any) => setStatus(`Falha no Registro: ${e.cause}`));
+  const setupUA = (ua: JsSIP.UA) => {
+    ua.on('registered', () => {
+      console.log('[SIP] Registrado com sucesso via WSS');
+      setStatus('Registrado (WSS)');
+    });
 
-    // Usando 'any' para o tipo do evento
+    ua.on('unregistered', () => {
+      console.log('[SIP] Não registrado');
+      setStatus('Não Registrado');
+    });
+
+    ua.on('registrationFailed', (e: any) => {
+      console.error('[SIP] Falha no registro WSS:', e);
+      setStatus(`Falha WSS: ${e.cause}`);
+    });
+
     ua.on('newRTCSession', (data: any) => {
+      console.log('[SIP] Nova sessão RTC via WSS:', data);
       const session = data.session;
       sessionRef.current = session;
 
       session.on('peerconnection', (e: any) => {
-        e.peerconnection.addEventListener('track', (event: any) => {
+        console.log('[WebRTC] PeerConnection criada:', e.peerconnection);
+        
+        const pc = e.peerconnection;
+        console.log('[WebRTC] Usando WSS - Estado inicial:', pc.connectionState);
+        
+        pc.addEventListener('connectionstatechange', () => {
+          console.log('[WebRTC] Estado da conexão:', pc.connectionState);
+        });
+        
+        pc.addEventListener('iceconnectionstatechange', () => {
+          console.log('[WebRTC] Estado ICE:', pc.iceConnectionState);
+        });
+
+        pc.addEventListener('track', (event: any) => {
+          console.log('[WebRTC] Track recebida via WSS:', event);
+          
           if (remoteAudioRef.current && event.streams[0]) {
+            console.log('[WebRTC] Configurando áudio remoto');
             remoteAudioRef.current.srcObject = event.streams[0];
+            
+            remoteAudioRef.current.play().then(() => {
+              console.log('[WebRTC] Áudio iniciado com sucesso via WSS');
+            }).catch(err => {
+              console.error('[WebRTC] Erro ao reproduzir áudio:', err);
+            });
           }
         });
       });
 
       session.on('accepted', () => {
-        setStatus('Em chamada');
+        console.log('[SIP] Chamada aceita via WSS');
+        setStatus('Em chamada (WSS)');
         setInCall(true);
       });
 
       session.on('ended', () => {
-        setStatus('Registrado');
+        console.log('[SIP] Chamada finalizada');
+        setStatus('Registrado (WSS)');
         setInCall(false);
       });
 
       session.on('failed', (e: any) => {
+        console.error('[SIP] Chamada falhou:', e);
         setStatus(`Chamada Falhou: ${e.cause}`);
         setInCall(false);
       });
     });
+  };
 
-    ua.start();
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    return () => {
-      if (ua.isRegistered()) {
-        ua.unregister();
-      }
-      ua.stop();
-    };
+    console.log('[DEBUG] Iniciando Softphone WSS...');
+    JsSIP.debug.enable('JsSIP:*');
+    
+    try {
+      const ua = createUA();
+      setupUA(ua);
+      uaRef.current = ua;
+      ua.start();
+
+      return () => {
+        if (ua.isRegistered()) {
+          ua.unregister();
+        }
+        ua.stop();
+      };
+    } catch (error) {
+      console.error('[DEBUG] Erro ao iniciar Softphone:', error);
+      setStatus('Erro ao iniciar');
+    }
   }, []);
 
   const handleCall = (destination: string) => {
     if (uaRef.current) {
+      console.log(`[SIP] Iniciando chamada para ${destination} via WSS`);
+      
       const options = {
         event_handlers: {
-          progress: (e: any) => setStatus('Chamando...'),
-          failed: (e: any) => setStatus(`Falhou: ${e.cause}`),
-          ended: (e: any) => setStatus('Finalizada'),
-          accepted: (e: any) => setStatus('Em chamada'),
+          progress: (e: any) => {
+            console.log('[SIP] Progresso da chamada:', e);
+            setStatus('Chamando...');
+          },
+          failed: (e: any) => {
+            console.error('[SIP] Chamada falhou:', e);
+            setStatus(`Falhou: ${e.cause}`);
+          },
+          ended: (e: any) => {
+            console.log('[SIP] Chamada finalizada:', e);
+            setStatus('Finalizada');
+          },
+          accepted: (e: any) => {
+            console.log('[SIP] Chamada aceita:', e);
+            setStatus('Em chamada');
+          },
         },
         mediaConstraints: { audio: true, video: false },
       };
+      
       uaRef.current.call(`sip:${destination}@clicktocall.local`, options);
     }
   };
 
   const handleHangup = () => {
     if (sessionRef.current) {
+      console.log('[SIP] Finalizando chamada');
       sessionRef.current.terminate();
     }
   };
 
+  const getStatusColor = () => {
+    if (status.includes('Registrado')) return 'text-green-600';
+    if (status.includes('Falha') || status.includes('Erro')) return 'text-red-600';
+    if (status.includes('Em chamada')) return 'text-blue-600';
+    return 'text-gray-600';
+  };
+
   return (
     <div className="p-4 border rounded-lg shadow-md">
-      <h2 className="text-lg font-bold">Softphone</h2>
-      <p>Status: <span className="font-semibold">{status}</span></p>
+      <h2 className="text-lg font-bold">Softphone WebRTC</h2>
+      <p>Status: <span className={`font-semibold ${getStatusColor()}`}>{status}</span></p>
+      
+      <div className="mt-2 text-sm text-gray-600">
+        <p>Protocolo: <strong>WSS (Seguro)</strong></p>
+        <p>Porta: <strong>{process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089'}</strong></p>
+        <p>Endpoint: <strong>{agentId}</strong></p>
+      </div>
+
       <div className="mt-4 space-x-2">
         <button
-          onClick={() => handleCall('9999')}
+          onClick={() => {
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.play().catch(console.error);
+            }
+            handleCall('9999');
+          }}
           disabled={inCall}
           className="px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700 disabled:bg-gray-400"
         >
-          Ligar para Teste (9999)
+          Teste Echo (9999)
         </button>
+        
+        <button
+          onClick={() => {
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.play().catch(console.error);
+            }
+            handleCall('8888');
+          }}
+          disabled={inCall}
+          className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          Teste Playback (8888)
+        </button>
+        
         <button
           onClick={handleHangup}
           disabled={!inCall}
@@ -114,8 +215,27 @@ export const Softphone = () => {
         >
           Desligar
         </button>
+        
+        <button
+          onClick={() => {
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.play().catch(console.error);
+              console.log('[DEBUG] Forçando reprodução de áudio');
+            }
+          }}
+          className="px-4 py-2 font-bold text-white bg-purple-500 rounded hover:bg-purple-700"
+        >
+          🔊 Ativar Áudio
+        </button>
       </div>
-      <audio ref={remoteAudioRef} autoPlay />
+      
+      <audio 
+        ref={remoteAudioRef} 
+        autoPlay 
+        playsInline
+        controls={true}
+        style={{ marginTop: '10px', width: '100%' }}
+      />
     </div>
   );
-}; 
+};
