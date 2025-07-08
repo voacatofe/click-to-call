@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { LogOut, User, UserPlus, LogIn } from 'lucide-react'
+import { LogOut, User, UserPlus, LogIn, Settings } from 'lucide-react'
 import { Softphone } from '@/components/Softphone';
 import { SoftphoneAdaptive } from '@/components/SoftphoneAdaptive';
 import { Button } from '@/components/ui/Button';
@@ -39,6 +39,16 @@ export default function Home() {
                 <User className="h-4 w-4" />
                 <span>{user.email}</span>
               </div>
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"
