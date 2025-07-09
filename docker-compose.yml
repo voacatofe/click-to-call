@@ -52,8 +52,6 @@ services:
       - asterisk_recordings:/var/spool/asterisk/monitor
       # Certificados em um volume nomeado para que não sejam recriados sempre
       - asterisk_certs:/etc/asterisk/keys
-    env_file:
-      - .env
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
@@ -80,8 +78,6 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    env_file:
-      - ./apps/api/.env
     environment:
       - NODE_ENV=development
       - ASTERISK_HOST=voip  # Conecta ao container Asterisk na rede Docker
@@ -122,8 +118,6 @@ services:
       - "3000:3000"
     # As variáveis de ambiente aqui são para tempo de execução, mas o build já as injetou.
     # Manter para consistência ou para outros possíveis usos em tempo de execução.
-    env_file:
-      - ./apps/web/.env
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}

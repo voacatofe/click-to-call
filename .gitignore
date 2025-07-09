@@ -1,13 +1,13 @@
 # Dependencies
-/node_modules
-/.pnpm-store
-
-# Build Artifacts
+node_modules/
+**/node_modules/
 /dist
 /build
 /out
 /.next
 
+.cursor
+.turbo
 # Logs
 *.log
 npm-debug.log*
