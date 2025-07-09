@@ -39,10 +39,12 @@ services:
     container_name: clicktocall-voip
     restart: unless-stopped
     ports:
-      # AMI, WSS (para WebRTC)
-      - "127.0.0.1:5038:5038"      # AMI - localhost only
-      - "127.0.0.1:8089:8089"      # WSS - localhost only  
-      - "10000-10200:10000-10200/udp" # RTP reduzido: 200 portas (suficiente para ~100 chamadas)
+      # AMI (apenas localhost, por segurança)
+      - "127.0.0.1:5038:5038"
+      # WSS (exposto para o proxy do Easypanel)
+      - "8089:8089"
+      # RTP (essencial para o áudio)
+      - "10000-10200:10000-10200/udp"
     volumes:
       # Mapeia todo o diretório de configuração (leitura/escrita para permitir substituição de variáveis)
       - ./asterisk/etc:/etc/asterisk
