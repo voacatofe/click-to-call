@@ -1,204 +1,49 @@
-# Click-to-Call System
+# Click-to-Call Full-Stack (Asterisk + Next.js)
 
-Sistema completo de Click-to-Call com frontend Next.js, backend Express.js e servidor Asterisk para WebRTC.
+Este projeto implementa uma solução completa de click-to-call utilizando Asterisk para a telefonia WebRTC e uma aplicação full-stack com Next.js para o frontend e backend.
 
-## 🏗️ Arquitetura
+## Arquitetura de Serviços
 
-- **Frontend**: Next.js com TypeScript e Tailwind CSS
-- **Backend**: Express.js com TypeScript
-- **VoIP**: Asterisk 18 com suporte WebRTC
-- **Database**: Supabase (PostgreSQL)
-- **CRM**: Integração com RD Station CRM API v1
+O projeto é orquestrado com Docker Compose e dividido nos seguintes serviços:
 
-## 📋 Pré-requisitos
+- `voip`: O servidor Asterisk, responsável por toda a lógica de VoIP, WebRTC, dialplan e gerenciamento de chamadas.
+- `backend`: A API de backend (anteriormente `api`), que serve como uma ponte entre o frontend e o Asterisk, além de lidar com outras lógicas de negócio.
+- `frontend`: A aplicação Next.js (anteriormente `web`), que fornece a interface do usuário para realizar e receber chamadas.
+- `cert-generator`: Um serviço auxiliar que gera certificados SSL autoassinados para garantir a comunicação segura (WSS) com o Asterisk.
 
-- Docker e Docker Compose
-- Node.js 18+ (para desenvolvimento local)
-- pnpm (gerenciador de pacotes)
+## Como Executar
 
-## 🚀 Execução Rápida com Docker
+### Ambiente de Desenvolvimento
 
-### 1. Configuração das Variáveis de Ambiente
+Para subir o ambiente de desenvolvimento, utilize o arquivo `docker-compose.yml` padrão. Ele está configurado com volumes para live-reloading e variáveis de ambiente para debug.
 
-Copie os arquivos de exemplo e configure suas credenciais:
+1.  **Pré-requisitos:** Certifique-se de que você tem o Docker e o Docker Compose instalados.
+2.  **Variáveis de Ambiente:** Copie o arquivo `.env.example` para `.env` e preencha as variáveis necessárias.
+3.  **Subir os Serviços:** Execute o seguinte comando na raiz do projeto:
 
-```bash
-# Configurações da API
-cp apps/api/.env.example apps/api/.env
+    ```bash
+    docker-compose up -d --build
+    ```
 
-# Configurações do Frontend  
-cp apps/web/.env.example apps/web/.env
+Isso irá construir as imagens e iniciar todos os containers em modo detached (-d).
 
-# Configurações globais (se necessário)
-cp .env.example .env
-```
+### Ambiente de Produção
 
-### 2. Configurar Credenciais
+Para a implantação em produção, utilizamos um arquivo de override chamado `docker-compose.prod.yml`. Este arquivo otimiza a aplicação para performance e segurança:
 
-Edite os arquivos `.env` com suas credenciais reais:
+- Remove os volumes de código-fonte para garantir que o container seja imutável.
+- Define `NODE_ENV=production`.
+- Permite o uso de um registro de imagens (Docker Hub, GCR, etc.) para os builds.
 
-**apps/api/.env**: Configure Supabase, RD Station CRM e JWT secrets
-**apps/web/.env**: Configure URLs da API e configurações públicas
+1.  **Variáveis de Ambiente:** Certifique-se de que seu ambiente de produção (ex: segredos do Easypanel) tem todas as variáveis de ambiente necessárias definidas no `.env` do projeto.
+2.  **Subir os Serviços:** Para implantar, o Docker Compose precisa ser instruído a usar ambos os arquivos. O Easypanel normalmente faz isso automaticamente se os nomes seguirem a convenção. O comando equivalente seria:
 
-### 3. Executar com Docker
+    ```bash
+    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+    ```
+    
+    Este comando mescla as configurações, com os valores de `docker-compose.prod.yml` sobrescrevendo os de `docker-compose.yml`.
 
-```bash
-# Construir e executar todos os serviços
-docker-compose up --build
+## Notas sobre a Implantação no Easypanel
 
-# Ou executar em background
-docker-compose up -d --build
-```
-
-### 4. Gerar Certificados TLS (se necessário)
-
-```bash
-# Gerar certificados para WSS (apenas se não existirem)
-docker-compose --profile tools run --rm cert-generator
-```
-
-## 🔧 Desenvolvimento Local
-
-### 1. Instalar Dependências
-
-```bash
-# Instalar dependências do monorepo
-pnpm install
-```
-
-### 2. Executar em Modo Desenvolvimento
-
-```bash
-# Executar todos os serviços em desenvolvimento
-pnpm dev
-
-# Ou executar individualmente:
-pnpm --filter api dev     # Backend na porta 3001
-pnpm --filter web dev     # Frontend na porta 3000
-```
-
-### 3. Executar Apenas o Asterisk
-
-```bash
-# Executar apenas o Asterisk com Docker
-docker-compose up asterisk
-```
-
-## 🌐 Acesso aos Serviços
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **Health Check**: http://localhost:3001/api/health
-- **Asterisk HTTP**: http://localhost:8088
-- **Asterisk WSS**: wss://localhost:8089
-
-## 📱 Configuração do Softphone
-
-### Credenciais Padrão
-
-- **Usuário**: agent-1001
-- **Senha**: changeme
-- **Realm**: clicktocall.local
-- **Servidor WSS**: wss://localhost:8089
-
-### Teste de Conexão WebRTC
-
-1. Acesse o frontend em http://localhost:3000
-2. O softphone deve conectar automaticamente
-3. Teste realizando uma chamada
-
-## 🔍 Verificação de Funcionamento
-
-### Health Checks
-
-```bash
-# Verificar API
-curl http://localhost:3001/api/health
-
-# Verificar Frontend
-curl http://localhost:3000
-
-# Verificar Asterisk
-docker exec asterisk-clicktocall asterisk -rx "core show version"
-```
-
-### Logs dos Serviços
-
-```bash
-# Ver logs de todos os serviços
-docker-compose logs -f
-
-# Ver logs específicos
-docker-compose logs -f api
-docker-compose logs -f web  
-docker-compose logs -f asterisk
-```
-
-## 🐛 Troubleshooting
-
-### Problemas Comuns
-
-1. **Erro de certificados WSS**:
-   ```bash
-   docker-compose --profile tools run --rm cert-generator
-   ```
-
-2. **Módulo SRTP não encontrado**:
-   - Verificar se `asterisk-srtp` está instalado no Dockerfile
-
-3. **Conexão recusada entre serviços**:
-   - Verificar se as redes Docker estão configuradas
-   - Usar `asterisk` ao invés de `localhost` nas configurações da API
-
-4. **Problemas de permissão Asterisk**:
-   ```bash
-   docker exec asterisk-clicktocall chown -R asterisk:asterisk /etc/asterisk
-   ```
-
-### Verificação de Configurações
-
-```bash
-# Verificar configuração PJSIP
-docker exec asterisk-clicktocall asterisk -rx "pjsip show transports"
-
-# Verificar endpoints WebRTC
-docker exec asterisk-clicktocall asterisk -rx "pjsip show endpoints"
-
-# Verificar módulos carregados
-docker exec asterisk-clicktocall asterisk -rx "module show like srtp"
-```
-
-## 📁 Estrutura do Projeto
-
-```
-click-to-call/
-├── apps/
-│   ├── api/                 # Backend Express.js
-│   │   ├── src/
-│   │   ├── .env            # Configurações da API
-│   │   └── Dockerfile
-│   └── web/                # Frontend Next.js  
-│       ├── src/
-│       ├── .env            # Configurações do Frontend
-│       └── Dockerfile
-├── asterisk/               # Servidor VoIP
-│   ├── etc/               # Configurações do Asterisk
-│   ├── Dockerfile
-│   └── run.sh
-├── docker-compose.yml     # Orquestração dos serviços
-└── README.md
-```
-
-## 🔐 Segurança
-
-- Altere todas as senhas padrão em produção
-- Configure certificados SSL válidos para WSS
-- Use variáveis de ambiente para credenciais sensíveis
-- Configure firewall adequadamente para portas do Asterisk
-
-## 📚 Documentação Adicional
-
-- [Configuração do Asterisk](./asterisk/README.md)
-- [API Documentation](./apps/api/README.md)
-- [Frontend Guide](./apps/web/README.md)
-- [Troubleshooting Guide](./docs/troubleshooting.md) 
+O erro `service "backend" has neither an image nor a build context specified` foi resolvido renomeando o serviço `api` para `backend`. A estrutura de arquivos agora deve ser compatível com o que o Easypanel espera. Ao implantar, aponte para o seu repositório Git e garanta que as variáveis de ambiente de produção estejam configuradas no painel do Easypanel. 

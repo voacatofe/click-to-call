@@ -30,13 +30,13 @@ services:
       - clicktocall-network
       
   # =============================================================================
-  # Serviço do Asterisk para VoIP/WebRTC
+  # VoIP Service (Asterisk)
   # =============================================================================
-  asterisk:
+  voip:
     build:
       context: ./asterisk
       dockerfile: Dockerfile
-    container_name: asterisk-clicktocall
+    container_name: clicktocall-voip
     restart: unless-stopped
     ports:
       # AMI, WSS (para WebRTC)
@@ -70,13 +70,13 @@ services:
       start_period: 15s
 
   # =============================================================================
-  # Backend API
+  # Backend Service
   # =============================================================================
-  api:
+  backend:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: clicktocall-api
+    container_name: clicktocall-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -84,11 +84,11 @@ services:
       - ./apps/api/.env
     environment:
       - NODE_ENV=development
-      - ASTERISK_HOST=asterisk  # Conecta ao container Asterisk na rede Docker
+      - ASTERISK_HOST=voip  # Conecta ao container Asterisk na rede Docker
       - ASTERISK_PORT=5038
       - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
     depends_on:
-      asterisk:
+      voip:
         condition: service_healthy
     networks:
       - clicktocall-network
@@ -100,9 +100,9 @@ services:
       start_period: 10s
 
   # =============================================================================
-  # Frontend Web Application (WSS-ONLY)
+  # Frontend Service
   # =============================================================================
-  web:
+  frontend:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -116,7 +116,7 @@ services:
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    container_name: clicktocall-web
+    container_name: clicktocall-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -136,7 +136,7 @@ services:
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:
-      api:
+      backend:
         condition: service_healthy
     networks:
       - clicktocall-network
