@@ -1,26 +1,36 @@
 services:
   # =============================================================================
-  # Certificate Generator (Run once to generate TLS certificates)
+  # Certificate Generator (Geração automática de certificados WSS)
   # =============================================================================
   cert-generator:
     image: alpine:3.18
-    profiles: ["tools"]  # Only run when explicitly specified
+    container_name: clicktocall-cert-generator
     volumes:
-      - ./asterisk/certs:/certs
-    command: >
-      sh -c "apk add --no-cache openssl &&
-             if [ ! -f /certs/privkey.pem ]; then
-               openssl req -x509 -newkey rsa:2048 -nodes \
-                 -keyout /certs/privkey.pem \
-                 -out /certs/fullchain.pem \
-                 -days 365 -subj '/CN=localhost';
-               echo 'Certificates generated successfully';
-             else
-               echo 'Certificates already exist';
-             fi"
+      - asterisk_certs:/certs
+    command: 
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl
+        if [ ! -f /certs/asterisk.crt ]; then
+          echo 'Gerando certificados WSS para ambiente seguro...'
+          mkdir -p /certs
+          openssl genrsa -out /certs/asterisk.key 2048
+          openssl req -new -x509 -key /certs/asterisk.key -out /certs/asterisk.crt -days 365 \
+            -subj '/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall/CN=localhost' \
+            -addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1,IP:::1"
+          chmod 600 /certs/asterisk.key
+          chmod 644 /certs/asterisk.crt
+          echo 'Certificados WSS gerados com sucesso!'
+        else
+          echo 'Certificados WSS já existem.'
+        fi
+    restart: "no"
+    networks:
+      - clicktocall-network
 
   # =============================================================================
-  # Asterisk VoIP Server
+  # Asterisk VoIP Server (WSS-ONLY - Seguro para HTTPS)
   # =============================================================================
   asterisk:
     build:
@@ -29,27 +39,39 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:5038:5038"      # Asterisk Manager Interface (AMI) - localhost only
-      # WS removed - WSS-only for security
-      - "127.0.0.1:8089:8089"      # WebSocket Secure (WSS) for SIP signaling - localhost only
+      # WS removido - WSS-only for security
+      - "127.0.0.1:8089:8089"      # WebSocket Secure (WSS) ONLY - localhost only
       - "10000-20000:10000-20000/udp" # RTP media ports
     volumes:
-      - ./asterisk/etc:/etc/asterisk
+      # Configurações WSS-only
+      - ./asterisk/etc/pjsip-unified.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/etc/http-wss.conf:/etc/asterisk/http.conf:ro
+      - ./asterisk/etc/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/etc/manager.conf:/etc/asterisk/manager.conf:ro
+      - ./asterisk/etc/modules.conf:/etc/asterisk/modules.conf:ro
+      - ./asterisk/etc/rtp.conf:/etc/asterisk/rtp.conf:ro
+      - ./asterisk/etc/asterisk.conf:/etc/asterisk/asterisk.conf:ro
+      - ./asterisk/etc/logger.conf:/etc/asterisk/logger.conf:ro
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - ./asterisk/recordings:/var/spool/asterisk/monitor
-      - ./asterisk/certs:/etc/asterisk/keys
+      # Volume para certificados WSS
+      - asterisk_certs:/etc/asterisk/keys
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
       - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
       - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD:-changeme_update_this}
+    depends_on:
+      cert-generator:
+        condition: service_completed_successfully
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "asterisk -rx 'core show version' || exit 1"]
+      test: ["CMD-SHELL", "asterisk -rx 'core show version' && asterisk -rx 'http show status'"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
   # =============================================================================
   # Backend API
@@ -64,6 +86,11 @@ services:
       - "3001:3001"
     env_file:
       - ./apps/api/.env
+    environment:
+      - NODE_ENV=development
+      - ASTERISK_HOST=asterisk
+      - ASTERISK_PORT=5038
+      - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
     depends_on:
       asterisk:
         condition: service_healthy
@@ -77,7 +104,7 @@ services:
       start_period: 10s
 
   # =============================================================================
-  # Frontend Web Application
+  # Frontend Web Application (WSS-ONLY)
   # =============================================================================
   web:
     build:
@@ -89,6 +116,15 @@ services:
       - "3000:3000"
     env_file:
       - ./apps/web/.env
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_ASTERISK_HOST=localhost
+      # WSS-Only configuration - NO WS PORT
+      - NEXT_PUBLIC_ASTERISK_WSS_PORT=8089
+      - NEXT_PUBLIC_AGENT_PASSWORD=${AGENT_1001_PASSWORD:-changeme_update_this}
+      # Force WSS for security
+      - NEXT_PUBLIC_FORCE_PROTOCOL=wss
     depends_on:
       api:
         condition: service_healthy
@@ -113,6 +149,9 @@ networks:
 # Volumes Configuration
 # =============================================================================
 volumes:
+  asterisk_certs:
+    driver: local
+    name: clicktocall-asterisk-certs
   asterisk-recordings:
     driver: local
   asterisk-logs:

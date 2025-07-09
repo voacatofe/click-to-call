@@ -95,8 +95,8 @@ if [ $ERRORS -eq 0 ]; then
     echo "   • Compatível com ambiente HTTPS"
     echo "   • Certificados SSL configurados"
     echo ""
-    echo "🚀 Para iniciar em modo WSS-only:"
-    echo "   docker-compose -f docker-compose-wss-only.yml up"
+    echo "🚀 Para iniciar (WSS-only):"
+    echo "   docker-compose up"
 else
     echo "❌ FALHAS: $ERRORS problema(s) de segurança encontrado(s)!"
     echo ""

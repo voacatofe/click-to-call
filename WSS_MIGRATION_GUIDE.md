@@ -29,17 +29,19 @@ Seu sistema foi **completamente convertido** para WSS-only, eliminando todas as 
 
 ### **Para Desenvolvimento (HTTPS):**
 ```bash
-# Use o docker-compose WSS-only
-docker-compose -f docker-compose-wss-only.yml up
+# Use o docker-compose único (WSS-only)
+docker-compose up
 
-# OU configure as variáveis para forçar WSS no compose principal
+# Certificados são gerados automaticamente
+# Sistema configurado para WSS-only e seguro
 ```
 
 ### **Para Produção (HTTPS):**
 ```bash
-# Configure certificados reais (não auto-assinados)
-# Use docker-compose-wss-only.yml
+# Configure certificados reais (substitua auto-assinados)
 # Configure domínio real no ASTERISK_HOST
+# Use o mesmo docker-compose.yml
+docker-compose up -d
 ```
 
 ---
@@ -124,8 +126,8 @@ wss://host:8089     # Protocolo forçado
 
 ### 1. **Teste Local:**
 ```bash
-# Inicie o sistema WSS-only
-docker-compose -f docker-compose-wss-only.yml up
+# Inicie o sistema WSS-only (comando único!)
+docker-compose up
 
 # Acesse https://localhost:3000
 # Teste chamadas usando WSS
@@ -158,7 +160,7 @@ openssl s_client -connect localhost:8089
 - Pronto para produção HTTPS
 
 ### ⚠️ **LEMBRE-SE:**
-- Use `docker-compose-wss-only.yml` para ambiente HTTPS
+- Use `docker-compose up` (único arquivo, WSS-only por padrão)
 - Configure certificados reais em produção
 - Mantenha senhas fortes nas variáveis de ambiente
 - Monitore logs para detectar tentativas de conexão insegura
