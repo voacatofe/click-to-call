@@ -7,7 +7,15 @@ RUN apk add --no-cache --update \
     asterisk=18.24.3-r1 \
     asterisk-srtp=18.24.3-r1 \
     openssl \
-    tini
+    tini \
+    # Adiciona os arquivos de som padrão em inglês
+    asterisk-sounds-en
+
+# Adiciona uma etapa de build para baixar e extrair os sons
+ADD https://downloads.asterisk.org/pub/telephony/sounds/asterisk-core-sounds-en-wav-current.tar.gz /tmp/sounds.tar.gz
+RUN mkdir -p /var/lib/asterisk/sounds/en && \
+    tar -xzf /tmp/sounds.tar.gz -C /var/lib/asterisk/sounds/en --strip-components=1 && \
+    rm /tmp/sounds.tar.gz
 
 # Generate separate TLS certificate and key files for WSS
 RUN mkdir -p /etc/asterisk/keys && \

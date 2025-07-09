@@ -106,21 +106,35 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST:-localhost}
+        NEXT_PUBLIC_ASTERISK_WSS_PORT: ${NEXT_PUBLIC_ASTERISK_WSS_PORT:-8089}
+        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD:-changeme}
+        NEXT_PUBLIC_FORCE_PROTOCOL: ${NEXT_PUBLIC_FORCE_PROTOCOL:-wss}
+        NEXT_PUBLIC_AGENT_ID: ${NEXT_PUBLIC_AGENT_ID:-agent-1001-wss}
+        NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     container_name: clicktocall-web
     restart: unless-stopped
     ports:
       - "3000:3000"
+    # As variáveis de ambiente aqui são para tempo de execução, mas o build já as injetou.
+    # Manter para consistência ou para outros possíveis usos em tempo de execução.
     env_file:
       - ./apps/web/.env
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
-      - NEXT_PUBLIC_ASTERISK_HOST=localhost
-      # WSS-Only configuration - NO WS PORT
-      - NEXT_PUBLIC_ASTERISK_WSS_PORT=8089
-      - NEXT_PUBLIC_AGENT_PASSWORD=${AGENT_1001_PASSWORD:-changeme_update_this}
-      # Force WSS for security
-      - NEXT_PUBLIC_FORCE_PROTOCOL=wss
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST:-localhost}
+      - NEXT_PUBLIC_ASTERISK_WSS_PORT=${NEXT_PUBLIC_ASTERISK_WSS_PORT:-8089}
+      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD:-changeme}
+      - NEXT_PUBLIC_FORCE_PROTOCOL=${NEXT_PUBLIC_FORCE_PROTOCOL:-wss}
+      - NEXT_PUBLIC_AGENT_ID=${NEXT_PUBLIC_AGENT_ID:-agent-1001-wss}
+      - NEXT_PUBLIC_ASTERISK_REALM=${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:
       api:
         condition: service_healthy
