@@ -9,10 +9,8 @@ authtimeout = 30
 authlimit = 50
 
 [admin]
-secret = ${AMI_SECRET:-changeme_update_this}
-deny=0.0.0.0/0.0.0.0
-permit=127.0.0.1/255.255.255.255
-permit=172.16.0.0/255.240.0.0
-; CORRIGIDO: Removida permissão 'command' por segurança (permite execução shell)
-read = system,call,log,verbose,dtmf,reporting,cdr
-write = system,call,log,verbose,dtmf,reporting,cdr 
+secret = ${AMI_SECRET}
+; Permite a conexão de qualquer IP dentro da rede interna do Docker
+permit=172.16.0.0/12
+read = system,call,log,verbose,command,agent,user,config,command,dtmf,reporting,cdr,dialplan,originate
+write = system,call,log,verbose,command,agent,user,config,command,dtmf,reporting,cdr,dialplan,originate 
