@@ -1,98 +1,76 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../lib/supabaseClient';
+import jwt from 'jsonwebtoken'; // Usar uma biblioteca JWT real
 
 // Estendendo a interface Request para adicionar nossa propriedade customizada
 interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    companyId: string;
+  };
   rdApiToken?: string;
-  user?: any;
-  companyId?: string;
 }
 
+const getRequiredEnv = (varName: string): string => {
+  const value = process.env[varName];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${varName}`);
+  }
+  return value;
+};
+
+const JWT_SECRET = getRequiredEnv('JWT_SECRET');
+
 export const injectRdTokenMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  // Extrair token JWT do header Authorization
-  const authHeader = (req as any).headers.authorization as string;
+  const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
   
   if (!token) {
-    res.status(401).json({ message: 'Authorization token required.' });
+    res.status(401).json({ message: 'Authorization token is required.' });
     return;
   }
 
   try {
-    // IMPLEMENTAÇÃO TEMPORÁRIA: Validação básica de token
-    // TODO: Implementar validação JWT completa com biblioteca jwt
-    // Exemplo: const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    
-    // Para agora, vamos simular a validação e extrair companyId do token
-    // Em produção, isso deve ser feito com validação JWT apropriada
-    let companyId: string;
-    
-    try {
-      // Tentativa de usar Supabase Auth (pode variar conforme versão)
-      const authResult = await (supabase.auth as any).getUser(token);
-      const user = authResult?.data?.user || authResult?.user;
-      
-      if (!user) {
-        res.status(401).json({ message: 'Invalid token: user not found.' });
-        return;
-      }
-      
-      companyId = user.user_metadata?.company_id || user.app_metadata?.company_id;
-      req.user = user;
-      
-    } catch (authError) {
-      // ============================================================================
-      // ⚠️  FALLBACK PARA DESENVOLVIMENTO - REMOVER EM PRODUÇÃO
-      // ============================================================================
-      // Este fallback permite testar a API sem implementar autenticação completa.
-      // 
-      // PRODUÇÃO: Implementar uma das opções abaixo:
-      // 
-      // Opção 1: JWT completo
-      // const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-      // companyId = decoded.companyId;
-      // 
-      // Opção 2: Supabase Auth com metadata
-      // companyId = user.user_metadata?.company_id;
-      // 
-      // Opção 3: Tabela de usuários com company_id
-      // const { data: userData } = await supabase
-      //   .from('users')
-      //   .select('company_id')
-      //   .eq('id', user.id)
-      //   .single();
-      // companyId = userData.company_id;
-      // ============================================================================
-      
-      console.warn('Auth validation failed, using fallback. Configure proper JWT validation.');
-      companyId = '41b4dc00-18d2-4995-95d1-7e9bad7ae143'; // ⚠️ REMOVER EM PRODUÇÃO
-    }
-    
+    // 1. Decodificar o token JWT
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; companyId: string; [key: string]: any };
+
+    const companyId = decoded.companyId;
+
     if (!companyId) {
-      res.status(400).json({ message: 'User is not associated with any company.' });
+      res.status(401).json({ message: 'Invalid token: companyId not found in token payload.' });
       return;
     }
+    
+    // Injetar informações do usuário na requisição para uso posterior
+    req.user = {
+      id: decoded.userId,
+      companyId: companyId
+    };
 
-    req.companyId = companyId;
-
-    // Buscar token RD Station da empresa
+    // 2. Buscar o token do RD Station para a empresa
     const { data: companyData, error } = await supabase
       .from('companies')
       .select('rd_station_token')
       .eq('id', companyId)
       .single();
 
-    if (error || !companyData || !companyData.rd_station_token) {
-      res.status(403).json({ message: 'Company RD Station token not found.' });
+    if (error) {
+      console.error(`Error fetching RD token for company ${companyId}:`, error);
+      res.status(500).json({ message: 'Failed to retrieve company data.' });
+      return;
+    }
+    
+    if (!companyData || !companyData.rd_station_token) {
+      res.status(403).json({ message: 'RD Station token not configured for this company.' });
       return;
     }
 
-    // Injeta o token na requisição
+    // 3. Injetar o token do RD Station na requisição
     req.rdApiToken = companyData.rd_station_token;
 
-    next(); // Passa para o próximo middleware ou controller
-  } catch (error: any) {
-    console.error('Error in injectRdTokenMiddleware:', error.message);
-    res.status(403).json({ message: 'Authentication failed.' });
+    next();
+  } catch (error) {
+    console.error('JWT validation failed:', error);
+    res.status(401).json({ message: 'Authentication failed. Invalid or expired token.' });
   }
 }; 
