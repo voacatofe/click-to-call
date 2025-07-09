@@ -21,17 +21,20 @@ export const SoftphoneAdaptive = () => {
 
   const agentId = 'agent-1001-wss'; // WSS-only endpoint
 
-  // Configuração WSS-only
+  // Configuração WSS-only (OBRIGATÓRIO para HTTPS)
   const createUA = (): JsSIP.UA => {
     const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
     const wssPort = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
+    
+    // FORÇAR WSS para segurança - nunca WS em ambiente HTTPS
     const wsUrl = `wss://${host}:${wssPort}/ws`;
     
-    logger.debug(`[WSS] Criando UA com configuração WSS-only:`, {
-      protocol: 'wss',
+    logger.debug(`[WSS-ONLY] Criando UA com configuração segura:`, {
+      protocol: 'wss (FORCED)',
       port: wssPort,
       endpoint: agentId,
-      url: wsUrl
+      url: wsUrl,
+      security: 'ENCRYPTED'
     });
 
     const socket = new JsSIP.WebSocketInterface(wsUrl);
