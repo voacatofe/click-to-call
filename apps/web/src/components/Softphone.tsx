@@ -11,18 +11,22 @@ export const Softphone = () => {
   const sessionRef = useRef<any>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
-  const agentId = 'agent-1001';
+  const agentId = 'agent-1001-wss'; // WSS-only para segurança
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    const socket = new JsSIP.WebSocketInterface(`wss://${process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}:${process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089'}/ws`);
+    // FORÇAR WSS - OBRIGATÓRIO para ambiente HTTPS
+    const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
+    const wssPort = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
+    const socket = new JsSIP.WebSocketInterface(`wss://${host}:${wssPort}/ws`);
+    
     // Removendo a tipagem explícita para evitar o erro do linter
     const configuration = {
-      sockets: [socket], // O cast para Socket pode ser necessário se o linter reclamar
-      uri: `sip:${agentId}@clicktocall.local`, // Usar o mesmo realm do pjsip.conf
+      sockets: [socket], // WSS-only socket
+      uri: `sip:${agentId}@clicktocall.local`, // WSS endpoint
       password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
       register: true
     };

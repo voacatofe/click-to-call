@@ -3,6 +3,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as JsSIP from 'jssip';
 
+// Sistema de log baseado em environment - Next.js compatível
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const logger = {
+  debug: isDev ? console.log : () => {},
+  info: console.info,
+  error: console.error,
+  warn: console.warn
+};
+
 export const SoftphoneAdaptive = () => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
@@ -12,17 +21,20 @@ export const SoftphoneAdaptive = () => {
 
   const agentId = 'agent-1001-wss'; // WSS-only endpoint
 
-  // Configuração WSS-only
+  // Configuração WSS-only (OBRIGATÓRIO para HTTPS)
   const createUA = (): JsSIP.UA => {
     const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
     const wssPort = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
+    
+    // FORÇAR WSS para segurança - nunca WS em ambiente HTTPS
     const wsUrl = `wss://${host}:${wssPort}/ws`;
     
-    console.log(`[WSS] Criando UA com configuração WSS-only:`, {
-      protocol: 'wss',
+    logger.debug(`[WSS-ONLY] Criando UA com configuração segura:`, {
+      protocol: 'wss (FORCED)',
       port: wssPort,
       endpoint: agentId,
-      url: wsUrl
+      url: wsUrl,
+      security: 'ENCRYPTED'
     });
 
     const socket = new JsSIP.WebSocketInterface(wsUrl);
@@ -39,70 +51,70 @@ export const SoftphoneAdaptive = () => {
 
   const setupUA = (ua: JsSIP.UA) => {
     ua.on('registered', () => {
-      console.log('[WSS] Registrado com sucesso via WebSocket Secure');
+      logger.info('[WSS] Registrado com sucesso via WebSocket Secure');
       setStatus('Registrado (WSS)');
     });
 
     ua.on('unregistered', () => {
-      console.log('[WSS] Não registrado');
+      logger.debug('[WSS] Não registrado');
       setStatus('Não Registrado');
     });
 
     ua.on('registrationFailed', (e: any) => {
-      console.error('[WSS] Falha no registro WSS:', e);
-      setStatus(`Falha WSS: ${e.cause}`);
+      logger.error('[WSS] Falha no registro WSS:', e.cause || 'Unknown error');
+      setStatus(`Falha WSS: ${e.cause || 'Connection error'}`);
     });
 
     ua.on('newRTCSession', (data: any) => {
-      console.log('[WSS] Nova sessão RTC via WebSocket Secure:', data);
+      logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
       const session = data.session;
       sessionRef.current = session;
 
       session.on('peerconnection', (e: any) => {
-        console.log('[WebRTC] PeerConnection criada via WSS:', e.peerconnection);
+        logger.debug('[WebRTC] PeerConnection criada via WSS');
         
         const pc = e.peerconnection;
-        console.log('[WebRTC] Estado inicial da conexão WSS:', pc.connectionState);
+        logger.debug('[WebRTC] Estado inicial da conexão WSS:', pc.connectionState);
         
         pc.addEventListener('connectionstatechange', () => {
-          console.log('[WebRTC] Estado da conexão WSS:', pc.connectionState);
+          logger.debug('[WebRTC] Estado da conexão WSS:', pc.connectionState);
         });
         
         pc.addEventListener('iceconnectionstatechange', () => {
-          console.log('[WebRTC] Estado ICE WSS:', pc.iceConnectionState);
+          logger.debug('[WebRTC] Estado ICE WSS:', pc.iceConnectionState);
         });
 
         pc.addEventListener('track', (event: any) => {
-          console.log('[WebRTC] Track recebida via WSS:', event);
+          logger.debug('[WebRTC] Track recebida via WSS');
           
           if (remoteAudioRef.current && event.streams[0]) {
-            console.log('[WebRTC] Configurando áudio remoto WSS');
+            logger.debug('[WebRTC] Configurando áudio remoto WSS');
             remoteAudioRef.current.srcObject = event.streams[0];
             
             remoteAudioRef.current.play().then(() => {
-              console.log('[WebRTC] Áudio WSS iniciado com sucesso');
+              logger.debug('[WebRTC] Áudio WSS iniciado com sucesso');
             }).catch(err => {
-              console.error('[WebRTC] Erro ao reproduzir áudio WSS:', err);
+              logger.error('[WebRTC] Erro ao reproduzir áudio WSS:', err);
             });
           }
         });
       });
 
       session.on('accepted', () => {
-        console.log('[WSS] Chamada aceita via WebSocket Secure');
+        logger.info('[WSS] Chamada aceita via WebSocket Secure');
         setStatus('Em chamada (WSS)');
         setInCall(true);
       });
 
       session.on('ended', () => {
-        console.log('[WSS] Chamada finalizada');
+        logger.info('[WSS] Chamada finalizada');
         setStatus('Registrado (WSS)');
         setInCall(false);
       });
 
       session.on('failed', (e: any) => {
-        console.error('[WSS] Chamada falhou:', e);
-        setStatus(`Chamada Falhou: ${e.cause}`);
+        logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
+        setStatus(`Chamada Falhou: ${e.cause || 'Error'}`);
         setInCall(false);
       });
     });
@@ -111,8 +123,12 @@ export const SoftphoneAdaptive = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    console.log('[DEBUG] Iniciando Softphone WSS-Only...');
-    JsSIP.debug.enable('JsSIP:*');
+    logger.debug('[DEBUG] Iniciando Softphone WSS-Only...');
+    
+    // Habilitar debug JsSIP apenas em desenvolvimento
+    if (isDev) {
+      JsSIP.debug.enable('JsSIP:*');
+    }
 
     try {
       const ua = createUA();
@@ -127,31 +143,31 @@ export const SoftphoneAdaptive = () => {
         ua.stop();
       };
     } catch (error) {
-      console.error('[DEBUG] Erro ao iniciar Softphone WSS:', error);
+      logger.error('[DEBUG] Erro ao iniciar Softphone WSS:', error);
       setStatus('Erro ao iniciar WSS');
     }
   }, []);
 
   const handleCall = (destination: string) => {
     if (uaRef.current) {
-      console.log(`[WSS] Iniciando chamada para ${destination} via WebSocket Secure`);
+      logger.debug(`[WSS] Iniciando chamada para ${destination} via WebSocket Secure`);
       
       const options = {
         event_handlers: {
           progress: (e: any) => {
-            console.log('[WSS] Progresso da chamada:', e);
+            logger.debug('[WSS] Progresso da chamada');
             setStatus('Chamando...');
           },
           failed: (e: any) => {
-            console.error('[WSS] Chamada falhou:', e);
-            setStatus(`Falhou: ${e.cause}`);
+            logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
+            setStatus(`Falhou: ${e.cause || 'Error'}`);
           },
           ended: (e: any) => {
-            console.log('[WSS] Chamada finalizada:', e);
+            logger.debug('[WSS] Chamada finalizada');
             setStatus('Finalizada');
           },
           accepted: (e: any) => {
-            console.log('[WSS] Chamada aceita:', e);
+            logger.info('[WSS] Chamada aceita');
             setStatus('Em chamada');
           },
         },
@@ -164,8 +180,15 @@ export const SoftphoneAdaptive = () => {
 
   const handleHangup = () => {
     if (sessionRef.current) {
-      console.log('[WSS] Finalizando chamada');
+      logger.debug('[WSS] Finalizando chamada');
       sessionRef.current.terminate();
+    }
+  };
+
+  const handleForceAudioPlay = () => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.play().catch(logger.error);
+      logger.debug('[DEBUG] Tentando ativar áudio WSS');
     }
   };
 
@@ -191,9 +214,7 @@ export const SoftphoneAdaptive = () => {
       <div className="mt-4 space-x-2">
         <button
           onClick={() => {
-            if (remoteAudioRef.current) {
-              remoteAudioRef.current.play().catch(console.error);
-            }
+            handleForceAudioPlay();
             handleCall('9999');
           }}
           disabled={inCall}
@@ -204,9 +225,7 @@ export const SoftphoneAdaptive = () => {
         
         <button
           onClick={() => {
-            if (remoteAudioRef.current) {
-              remoteAudioRef.current.play().catch(console.error);
-            }
+            handleForceAudioPlay();
             handleCall('8888');
           }}
           disabled={inCall}
@@ -224,12 +243,7 @@ export const SoftphoneAdaptive = () => {
         </button>
         
         <button
-          onClick={() => {
-            if (remoteAudioRef.current) {
-              remoteAudioRef.current.play().catch(console.error);
-              console.log('[DEBUG] Forçando reprodução de áudio WSS');
-            }
-          }}
+          onClick={handleForceAudioPlay}
           className="px-4 py-2 font-bold text-white bg-purple-500 rounded hover:bg-purple-700"
         >
           🔊 Ativar Áudio WSS
@@ -240,8 +254,12 @@ export const SoftphoneAdaptive = () => {
         ref={remoteAudioRef} 
         autoPlay 
         playsInline
-        controls={true}
-        style={{ marginTop: '10px', width: '100%' }}
+        controls={isDev} // Mostrar controles apenas em desenvolvimento
+        style={{ 
+          marginTop: '10px', 
+          width: '100%',
+          display: isDev ? 'block' : 'none' // Ocultar em produção
+        }}
       />
     </div>
   );
