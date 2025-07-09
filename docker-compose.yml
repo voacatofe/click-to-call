@@ -28,9 +28,9 @@ services:
     container_name: asterisk-clicktocall
     restart: unless-stopped
     ports:
-      - "5038:5038"      # Asterisk Manager Interface (AMI)
-      - "8088:8088"      # WebSocket (WS) for SIP signaling
-      - "8089:8089"      # WebSocket Secure (WSS) for SIP signaling
+      - "127.0.0.1:5038:5038"      # Asterisk Manager Interface (AMI) - localhost only
+      - "127.0.0.1:8088:8088"      # WebSocket (WS) for SIP signaling - localhost only
+      - "127.0.0.1:8089:8089"      # WebSocket Secure (WSS) for SIP signaling - localhost only
       - "10000-20000:10000-20000/udp" # RTP media ports
     volumes:
       - ./asterisk/etc:/etc/asterisk
@@ -40,6 +40,8 @@ services:
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
+      - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
+      - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD:-changeme_update_this}
     networks:
       - clicktocall-network
     healthcheck:
