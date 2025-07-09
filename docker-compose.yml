@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # =============================================================================
-  # Certificate Generator (Run once to generate TLS certificates)
+  # Certificate Generator (WSS Support)
   # =============================================================================
   cert-generator:
     image: alpine:3.18
@@ -11,18 +11,23 @@ services:
       - ./asterisk/certs:/certs
     command: >
       sh -c "apk add --no-cache openssl &&
-             if [ ! -f /certs/privkey.pem ]; then
-               openssl req -x509 -newkey rsa:2048 -nodes \
-                 -keyout /certs/privkey.pem \
-                 -out /certs/fullchain.pem \
-                 -days 365 -subj '/CN=localhost';
-               echo 'Certificates generated successfully';
+             if [ ! -f /certs/asterisk.pem ]; then
+               echo 'Generating SSL certificates for WSS...';
+               openssl genrsa -out /certs/asterisk.key 2048 &&
+               openssl req -new -x509 -key /certs/asterisk.key \
+                 -out /certs/asterisk.crt -days 365 \
+                 -subj '/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall-Dev/CN=localhost' \
+                 -addext 'subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1,IP:::1' &&
+               cat /certs/asterisk.crt /certs/asterisk.key > /certs/asterisk.pem &&
+               chmod 600 /certs/asterisk.key /certs/asterisk.pem &&
+               chmod 644 /certs/asterisk.crt &&
+               echo 'SSL certificates generated successfully';
              else
-               echo 'Certificates already exist';
+               echo 'SSL certificates already exist';
              fi"
 
   # =============================================================================
-  # Asterisk VoIP Server
+  # Asterisk VoIP Server (WSS Only)
   # =============================================================================
   asterisk:
     build:
@@ -31,7 +36,6 @@ services:
     restart: unless-stopped
     ports:
       - "5038:5038"      # Asterisk Manager Interface (AMI)
-      - "8088:8088"      # WebSocket (WS) for SIP signaling
       - "8089:8089"      # WebSocket Secure (WSS) for SIP signaling
       - "10000-20000:10000-20000/udp" # RTP media ports
     volumes:
@@ -77,7 +81,7 @@ services:
       start_period: 10s
 
   # =============================================================================
-  # Frontend Web Application
+  # Frontend Web Application (HTTPS/WSS Ready)
   # =============================================================================
   web:
     build:

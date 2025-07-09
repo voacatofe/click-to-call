@@ -1,377 +1,95 @@
-# Script PowerShell para configurar WSS no Click-to-Call
-# Uso: .\scripts\setup-wss.ps1 [modo]
-# Modos: ws, wss, test
+# Script PowerShell simplificado para Click-to-Call (WSS apenas)
+# Uso: .\scripts\setup-wss.ps1 [ação]
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("ws", "wss", "test", "help")]
-    [string]$Modo = "help"
+    [ValidateSet("start", "stop", "test", "logs", "help")]
+    [string]$Acao = "help"
 )
 
 function Show-Help {
-    Write-Host "🔐 Script de Configuração WSS - Click-to-Call" -ForegroundColor Cyan
+    Write-Host "🔐 Click-to-Call WSS - Script Simplificado" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Uso:" -ForegroundColor Yellow
-    Write-Host "  .\scripts\setup-wss.ps1 ws      # Modo desenvolvimento (WS apenas)"
-    Write-Host "  .\scripts\setup-wss.ps1 wss     # Modo produção (WS + WSS)"
+    Write-Host "  .\scripts\setup-wss.ps1 start   # Iniciar sistema (WSS)"
+    Write-Host "  .\scripts\setup-wss.ps1 stop    # Parar sistema"
     Write-Host "  .\scripts\setup-wss.ps1 test    # Testar conectividade"
-    Write-Host "  .\scripts\setup-wss.ps1 help    # Mostrar esta ajuda"
+    Write-Host "  .\scripts\setup-wss.ps1 logs    # Ver logs"
+    Write-Host "  .\scripts\setup-wss.ps1 help    # Mostrar ajuda"
     Write-Host ""
-    Write-Host "Exemplos:" -ForegroundColor Green
-    Write-Host "  # Iniciar apenas com WS para desenvolvimento rápido"
-    Write-Host "  .\scripts\setup-wss.ps1 ws"
-    Write-Host ""
-    Write-Host "  # Iniciar com WS + WSS para testar produção"
-    Write-Host "  .\scripts\setup-wss.ps1 wss"
-    Write-Host ""
-    Write-Host "  # Testar se ambos protocolos estão funcionando"
-    Write-Host "  .\scripts\setup-wss.ps1 test"
+    Write-Host "Sistema usa apenas WSS (WebSocket Secure) via HTTPS" -ForegroundColor Green
 }
 
-function Start-WSMode {
-    Write-Host "🚀 Iniciando modo WS (desenvolvimento)..." -ForegroundColor Green
+function Start-System {
+    Write-Host "🚀 Iniciando Click-to-Call (WSS)..." -ForegroundColor Green
     
-    # Parar containers atuais
-    Write-Host "Parando containers atuais..." -ForegroundColor Yellow
-    docker-compose down -v
-    
-    # Iniciar com configuração WS
-    Write-Host "Iniciando containers com WS..." -ForegroundColor Yellow
-    docker-compose up -d
-    
-    # Aguardar containers ficarem saudáveis
-    Write-Host "Aguardando containers ficarem saudáveis..." -ForegroundColor Yellow
-    Start-Sleep 10
-    
-    # Verificar status
-    Write-Host "Status dos containers:" -ForegroundColor Cyan
-    docker-compose ps
-    
-    Write-Host ""
-    Write-Host "✅ Modo WS iniciado!" -ForegroundColor Green
-    Write-Host "🌐 Frontend: http://localhost:3000" -ForegroundColor Cyan
-    Write-Host "🔗 WebSocket: ws://localhost:8088/ws" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Para testar: .\scripts\setup-wss.ps1 test" -ForegroundColor Yellow
-}
-
-function Start-WSSMode {
-    Write-Host "🔐 Iniciando modo WSS (produção)..." -ForegroundColor Green
-    
-    # Parar containers atuais
-    Write-Host "Parando containers atuais..." -ForegroundColor Yellow
-    docker-compose down -v
-    docker-compose -f docker-compose-wss.yml down -v
-    
-    # Iniciar com configuração WSS
-    Write-Host "Iniciando containers com WSS..." -ForegroundColor Yellow
-    docker-compose -f docker-compose-wss.yml up -d
-    
-    # Aguardar containers ficarem saudáveis
-    Write-Host "Aguardando containers e geração de certificados..." -ForegroundColor Yellow
-    Start-Sleep 20
-    
-    # Verificar status
-    Write-Host "Status dos containers:" -ForegroundColor Cyan
-    docker-compose -f docker-compose-wss.yml ps
-    
-    # Verificar certificados
-    Write-Host ""
-    Write-Host "Verificando certificados..." -ForegroundColor Cyan
-    docker exec asterisk-clicktocall-wss ls -la /etc/asterisk/keys/ 2>$null
-    
-    Write-Host ""
-    Write-Host "✅ Modo WSS iniciado!" -ForegroundColor Green
-    Write-Host "🌐 Frontend: http://localhost:3000 (WS) ou https://localhost:3000 (WSS)" -ForegroundColor Cyan
-    Write-Host "🔗 WebSocket: ws://localhost:8088/ws" -ForegroundColor Cyan
-    Write-Host "🔐 WebSocket Secure: wss://localhost:8089/ws" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "⚠️  Para HTTPS, aceite o certificado auto-assinado no navegador" -ForegroundColor Yellow
-    Write-Host "Para testar: .\scripts\setup-wss.ps1 test" -ForegroundColor Yellow
-}
-
-function Test-Connectivity {
-    Write-Host "🧪 Testando conectividade..." -ForegroundColor Cyan
-    Write-Host ""
-    
-    # Testar containers
-    Write-Host "1. Verificando containers..." -ForegroundColor Yellow
-    $containers = docker ps --format "table {{.Names}}\t{{.Status}}" | Select-String "clicktocall|asterisk"
-    if ($containers) {
-        $containers | ForEach-Object { Write-Host "   $_" -ForegroundColor Green }
-    } else {
-        Write-Host "   ❌ Nenhum container encontrado" -ForegroundColor Red
+    # Verificar Docker
+    try {
+        docker version | Out-Null
+    } catch {
+        Write-Host "❌ Docker não está rodando!" -ForegroundColor Red
         return
     }
     
-    Write-Host ""
-    Write-Host "2. Testando conectividade HTTP..." -ForegroundColor Yellow
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3000" -TimeoutSec 5 -UseBasicParsing
-        Write-Host "   ✅ HTTP (localhost:3000): $($response.StatusCode)" -ForegroundColor Green
-    } catch {
-        Write-Host "   ❌ HTTP não disponível: $($_.Exception.Message)" -ForegroundColor Red
-    }
+    # Gerar certificados se necessário
+    Write-Host "Gerando certificados SSL..." -ForegroundColor Yellow
+    docker-compose run --rm --no-deps cert-generator
     
-    Write-Host ""
-    Write-Host "3. Testando API..." -ForegroundColor Yellow
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3001/health" -TimeoutSec 5 -UseBasicParsing
-        Write-Host "   ✅ API (localhost:3001): $($response.StatusCode)" -ForegroundColor Green
-    } catch {
-        Write-Host "   ❌ API não disponível: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    
-    Write-Host ""
-    Write-Host "4. Verificando portas WebSocket..." -ForegroundColor Yellow
-    
-    # Testar porta WS
-    $wsPort = Test-NetConnection -ComputerName localhost -Port 8088 -WarningAction SilentlyContinue
-    if ($wsPort.TcpTestSucceeded) {
-        Write-Host "   ✅ WS (localhost:8088): Porta aberta" -ForegroundColor Green
-    } else {
-        Write-Host "   ❌ WS (localhost:8088): Porta fechada" -ForegroundColor Red
-    }
-    
-    # Testar porta WSS
-    $wssPort = Test-NetConnection -ComputerName localhost -Port 8089 -WarningAction SilentlyContinue
-    if ($wssPort.TcpTestSucceeded) {
-        Write-Host "   ✅ WSS (localhost:8089): Porta aberta" -ForegroundColor Green
-    } else {
-        Write-Host "   ⚠️  WSS (localhost:8089): Porta fechada (normal se usando modo WS)" -ForegroundColor Yellow
-    }
-    
-    Write-Host ""
-    Write-Host "5. Verificando logs recentes..." -ForegroundColor Yellow
-    
-    # Verificar se há erros nos logs
-    $asteriskContainer = docker ps --filter "name=asterisk" --format "{{.Names}}" | Select-Object -First 1
-    if ($asteriskContainer) {
-        Write-Host "   Container Asterisk: $asteriskContainer" -ForegroundColor Cyan
-        $logs = docker logs $asteriskContainer --tail 5 2>&1
-        if ($logs -match "error|failed|ERROR|FAILED") {
-            Write-Host "   ⚠️  Erros encontrados nos logs (verifique manualmente)" -ForegroundColor Yellow
-        } else {
-            Write-Host "   ✅ Logs sem erros aparentes" -ForegroundColor Green
-        }
-    }
-    
-    Write-Host ""
-    Write-Host "📋 Resumo do Teste:" -ForegroundColor Cyan
-    Write-Host "• Para testar WS:  Acesse http://localhost:3000" -ForegroundColor White
-    Write-Host "• Para testar WSS: Acesse https://localhost:3000 (aceite certificado)" -ForegroundColor White
-    Write-Host "• Logs Asterisk:   docker logs asterisk-clicktocall-wss --follow" -ForegroundColor White
-    Write-Host "• Logs completos:  docker-compose logs -f" -ForegroundColor White
-}
-
-# Verificar se Docker está rodando
-try {
-    docker version | Out-Null
-} catch {
-    Write-Host "❌ Docker não está rodando ou não está instalado!" -ForegroundColor Red
-    Write-Host "Inicie o Docker Desktop e tente novamente." -ForegroundColor Yellow
-    exit 1
-}
-
-# Executar ação baseada no modo
-switch ($Modo) {
-    "ws" { Start-WSMode }
-    "wss" { Start-WSSMode }
-    "test" { Test-Connectivity }
-    "help" { Show-Help }
-    default { Show-Help }
-}
-
-Write-Host ""
-Write-Host "🔗 Links úteis:" -ForegroundColor Cyan
-Write-Host "• Documentação: .\docs\WSS-IMPLEMENTATION-GUIDE.md" -ForegroundColor White
-Write-Host "• Logs: docker-compose logs -f" -ForegroundColor White
-Write-Host "• Status: docker-compose ps" -ForegroundColor White 
-# Uso: .\scripts\setup-wss.ps1 [modo]
-# Modos: ws, wss, test
-
-param(
-    [Parameter(Position=0)]
-    [ValidateSet("ws", "wss", "test", "help")]
-    [string]$Modo = "help"
-)
-
-function Show-Help {
-    Write-Host "🔐 Script de Configuração WSS - Click-to-Call" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Uso:" -ForegroundColor Yellow
-    Write-Host "  .\scripts\setup-wss.ps1 ws      # Modo desenvolvimento (WS apenas)"
-    Write-Host "  .\scripts\setup-wss.ps1 wss     # Modo produção (WS + WSS)"
-    Write-Host "  .\scripts\setup-wss.ps1 test    # Testar conectividade"
-    Write-Host "  .\scripts\setup-wss.ps1 help    # Mostrar esta ajuda"
-    Write-Host ""
-    Write-Host "Exemplos:" -ForegroundColor Green
-    Write-Host "  # Iniciar apenas com WS para desenvolvimento rápido"
-    Write-Host "  .\scripts\setup-wss.ps1 ws"
-    Write-Host ""
-    Write-Host "  # Iniciar com WS + WSS para testar produção"
-    Write-Host "  .\scripts\setup-wss.ps1 wss"
-    Write-Host ""
-    Write-Host "  # Testar se ambos protocolos estão funcionando"
-    Write-Host "  .\scripts\setup-wss.ps1 test"
-}
-
-function Start-WSMode {
-    Write-Host "🚀 Iniciando modo WS (desenvolvimento)..." -ForegroundColor Green
-    
-    # Parar containers atuais
-    Write-Host "Parando containers atuais..." -ForegroundColor Yellow
+    # Parar e iniciar containers
+    Write-Host "Iniciando containers..." -ForegroundColor Yellow
     docker-compose down -v
-    
-    # Iniciar com configuração WS
-    Write-Host "Iniciando containers com WS..." -ForegroundColor Yellow
     docker-compose up -d
     
-    # Aguardar containers ficarem saudáveis
-    Write-Host "Aguardando containers ficarem saudáveis..." -ForegroundColor Yellow
-    Start-Sleep 10
+    Write-Host "Aguardando containers..." -ForegroundColor Yellow
+    Start-Sleep 15
     
-    # Verificar status
-    Write-Host "Status dos containers:" -ForegroundColor Cyan
+    # Status
+    Write-Host "Status:" -ForegroundColor Cyan
     docker-compose ps
     
     Write-Host ""
-    Write-Host "✅ Modo WS iniciado!" -ForegroundColor Green
-    Write-Host "🌐 Frontend: http://localhost:3000" -ForegroundColor Cyan
-    Write-Host "🔗 WebSocket: ws://localhost:8088/ws" -ForegroundColor Cyan
+    Write-Host "✅ Sistema iniciado!" -ForegroundColor Green
+    Write-Host "🌐 Frontend: https://localhost:3000" -ForegroundColor Cyan
+    Write-Host "� WebSocket: wss://localhost:8089/ws" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "Para testar: .\scripts\setup-wss.ps1 test" -ForegroundColor Yellow
+    Write-Host "⚠️  Aceite o certificado auto-assinado no navegador" -ForegroundColor Yellow
 }
 
-function Start-WSSMode {
-    Write-Host "🔐 Iniciando modo WSS (produção)..." -ForegroundColor Green
-    
-    # Parar containers atuais
-    Write-Host "Parando containers atuais..." -ForegroundColor Yellow
+function Stop-System {
+    Write-Host "🛑 Parando Click-to-Call..." -ForegroundColor Yellow
     docker-compose down -v
-    docker-compose -f docker-compose-wss.yml down -v
-    
-    # Iniciar com configuração WSS
-    Write-Host "Iniciando containers com WSS..." -ForegroundColor Yellow
-    docker-compose -f docker-compose-wss.yml up -d
-    
-    # Aguardar containers ficarem saudáveis
-    Write-Host "Aguardando containers e geração de certificados..." -ForegroundColor Yellow
-    Start-Sleep 20
-    
-    # Verificar status
-    Write-Host "Status dos containers:" -ForegroundColor Cyan
-    docker-compose -f docker-compose-wss.yml ps
-    
-    # Verificar certificados
-    Write-Host ""
-    Write-Host "Verificando certificados..." -ForegroundColor Cyan
-    docker exec asterisk-clicktocall-wss ls -la /etc/asterisk/keys/ 2>$null
-    
-    Write-Host ""
-    Write-Host "✅ Modo WSS iniciado!" -ForegroundColor Green
-    Write-Host "🌐 Frontend: http://localhost:3000 (WS) ou https://localhost:3000 (WSS)" -ForegroundColor Cyan
-    Write-Host "🔗 WebSocket: ws://localhost:8088/ws" -ForegroundColor Cyan
-    Write-Host "🔐 WebSocket Secure: wss://localhost:8089/ws" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "⚠️  Para HTTPS, aceite o certificado auto-assinado no navegador" -ForegroundColor Yellow
-    Write-Host "Para testar: .\scripts\setup-wss.ps1 test" -ForegroundColor Yellow
+    Write-Host "✅ Sistema parado!" -ForegroundColor Green
 }
 
-function Test-Connectivity {
-    Write-Host "🧪 Testando conectividade..." -ForegroundColor Cyan
-    Write-Host ""
+function Test-System {
+    Write-Host "🧪 Testando sistema..." -ForegroundColor Cyan
     
-    # Testar containers
-    Write-Host "1. Verificando containers..." -ForegroundColor Yellow
-    $containers = docker ps --format "table {{.Names}}\t{{.Status}}" | Select-String "clicktocall|asterisk"
-    if ($containers) {
-        $containers | ForEach-Object { Write-Host "   $_" -ForegroundColor Green }
-    } else {
-        Write-Host "   ❌ Nenhum container encontrado" -ForegroundColor Red
-        return
-    }
+    # Containers
+    $containers = docker-compose ps --services --filter "status=running"
+    Write-Host "Containers ativos: $($containers -join ', ')" -ForegroundColor Green
     
-    Write-Host ""
-    Write-Host "2. Testando conectividade HTTP..." -ForegroundColor Yellow
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3000" -TimeoutSec 5 -UseBasicParsing
-        Write-Host "   ✅ HTTP (localhost:3000): $($response.StatusCode)" -ForegroundColor Green
-    } catch {
-        Write-Host "   ❌ HTTP não disponível: $($_.Exception.Message)" -ForegroundColor Red
-    }
+    # Portas
+    $wss = Test-NetConnection -ComputerName localhost -Port 8089 -WarningAction SilentlyContinue
+    $web = Test-NetConnection -ComputerName localhost -Port 3000 -WarningAction SilentlyContinue
+    
+    Write-Host "WSS (8089): $(if($wss.TcpTestSucceeded){'✅ OK'}else{'❌ FALHA'})" -ForegroundColor $(if($wss.TcpTestSucceeded){'Green'}else{'Red'})
+    Write-Host "Web (3000): $(if($web.TcpTestSucceeded){'✅ OK'}else{'❌ FALHA'})" -ForegroundColor $(if($web.TcpTestSucceeded){'Green'}else{'Red'})
     
     Write-Host ""
-    Write-Host "3. Testando API..." -ForegroundColor Yellow
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3001/health" -TimeoutSec 5 -UseBasicParsing
-        Write-Host "   ✅ API (localhost:3001): $($response.StatusCode)" -ForegroundColor Green
-    } catch {
-        Write-Host "   ❌ API não disponível: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    
-    Write-Host ""
-    Write-Host "4. Verificando portas WebSocket..." -ForegroundColor Yellow
-    
-    # Testar porta WS
-    $wsPort = Test-NetConnection -ComputerName localhost -Port 8088 -WarningAction SilentlyContinue
-    if ($wsPort.TcpTestSucceeded) {
-        Write-Host "   ✅ WS (localhost:8088): Porta aberta" -ForegroundColor Green
-    } else {
-        Write-Host "   ❌ WS (localhost:8088): Porta fechada" -ForegroundColor Red
-    }
-    
-    # Testar porta WSS
-    $wssPort = Test-NetConnection -ComputerName localhost -Port 8089 -WarningAction SilentlyContinue
-    if ($wssPort.TcpTestSucceeded) {
-        Write-Host "   ✅ WSS (localhost:8089): Porta aberta" -ForegroundColor Green
-    } else {
-        Write-Host "   ⚠️  WSS (localhost:8089): Porta fechada (normal se usando modo WS)" -ForegroundColor Yellow
-    }
-    
-    Write-Host ""
-    Write-Host "5. Verificando logs recentes..." -ForegroundColor Yellow
-    
-    # Verificar se há erros nos logs
-    $asteriskContainer = docker ps --filter "name=asterisk" --format "{{.Names}}" | Select-Object -First 1
-    if ($asteriskContainer) {
-        Write-Host "   Container Asterisk: $asteriskContainer" -ForegroundColor Cyan
-        $logs = docker logs $asteriskContainer --tail 5 2>&1
-        if ($logs -match "error|failed|ERROR|FAILED") {
-            Write-Host "   ⚠️  Erros encontrados nos logs (verifique manualmente)" -ForegroundColor Yellow
-        } else {
-            Write-Host "   ✅ Logs sem erros aparentes" -ForegroundColor Green
-        }
-    }
-    
-    Write-Host ""
-    Write-Host "📋 Resumo do Teste:" -ForegroundColor Cyan
-    Write-Host "• Para testar WS:  Acesse http://localhost:3000" -ForegroundColor White
-    Write-Host "• Para testar WSS: Acesse https://localhost:3000 (aceite certificado)" -ForegroundColor White
-    Write-Host "• Logs Asterisk:   docker logs asterisk-clicktocall-wss --follow" -ForegroundColor White
-    Write-Host "• Logs completos:  docker-compose logs -f" -ForegroundColor White
+    Write-Host "Para testar: https://localhost:3000" -ForegroundColor Cyan
 }
 
-# Verificar se Docker está rodando
-try {
-    docker version | Out-Null
-} catch {
-    Write-Host "❌ Docker não está rodando ou não está instalado!" -ForegroundColor Red
-    Write-Host "Inicie o Docker Desktop e tente novamente." -ForegroundColor Yellow
-    exit 1
+function Show-Logs {
+    Write-Host "📋 Logs do sistema:" -ForegroundColor Cyan
+    docker-compose logs -f
 }
 
-# Executar ação baseada no modo
-switch ($Modo) {
-    "ws" { Start-WSMode }
-    "wss" { Start-WSSMode }
-    "test" { Test-Connectivity }
+# Executar ação
+switch ($Acao) {
+    "start" { Start-System }
+    "stop" { Stop-System }
+    "test" { Test-System }
+    "logs" { Show-Logs }
     "help" { Show-Help }
     default { Show-Help }
-}
-
-Write-Host ""
-Write-Host "🔗 Links úteis:" -ForegroundColor Cyan
-Write-Host "• Documentação: .\docs\WSS-IMPLEMENTATION-GUIDE.md" -ForegroundColor White
-Write-Host "• Logs: docker-compose logs -f" -ForegroundColor White
-Write-Host "• Status: docker-compose ps" -ForegroundColor White 
+} 
