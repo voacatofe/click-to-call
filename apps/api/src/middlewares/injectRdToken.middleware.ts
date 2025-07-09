@@ -41,9 +41,31 @@ export const injectRdTokenMiddleware = async (req: AuthenticatedRequest, res: Re
       req.user = user;
       
     } catch (authError) {
-      // Fallback: Para desenvolvimento, aceitar um company ID fixo se não conseguir validar
+      // ============================================================================
+      // ⚠️  FALLBACK PARA DESENVOLVIMENTO - REMOVER EM PRODUÇÃO
+      // ============================================================================
+      // Este fallback permite testar a API sem implementar autenticação completa.
+      // 
+      // PRODUÇÃO: Implementar uma das opções abaixo:
+      // 
+      // Opção 1: JWT completo
+      // const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      // companyId = decoded.companyId;
+      // 
+      // Opção 2: Supabase Auth com metadata
+      // companyId = user.user_metadata?.company_id;
+      // 
+      // Opção 3: Tabela de usuários com company_id
+      // const { data: userData } = await supabase
+      //   .from('users')
+      //   .select('company_id')
+      //   .eq('id', user.id)
+      //   .single();
+      // companyId = userData.company_id;
+      // ============================================================================
+      
       console.warn('Auth validation failed, using fallback. Configure proper JWT validation.');
-      companyId = '41b4dc00-18d2-4995-95d1-7e9bad7ae143'; // REMOVER EM PRODUÇÃO
+      companyId = '41b4dc00-18d2-4995-95d1-7e9bad7ae143'; // ⚠️ REMOVER EM PRODUÇÃO
     }
     
     if (!companyId) {

@@ -28,46 +28,42 @@ services:
     restart: "no"
     networks:
       - clicktocall-network
-
+      
   # =============================================================================
-  # Asterisk VoIP Server (WSS-ONLY - Seguro para HTTPS)
+  # Serviço do Asterisk para VoIP/WebRTC
   # =============================================================================
   asterisk:
     build:
       context: ./asterisk
+      dockerfile: Dockerfile
     container_name: asterisk-clicktocall
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5038:5038"      # Asterisk Manager Interface (AMI) - localhost only
-      # WS removido - WSS-only for security
-      - "127.0.0.1:8089:8089"      # WebSocket Secure (WSS) ONLY - localhost only
-      - "10000-20000:10000-20000/udp" # RTP media ports (EXPANDIDO: 10.000 portas)
+      # AMI, WSS (para WebRTC)
+      - "127.0.0.1:5038:5038"      # AMI - localhost only
+      - "127.0.0.1:8089:8089"      # WSS - localhost only  
+      - "10000-10200:10000-10200/udp" # RTP reduzido: 200 portas (suficiente para ~100 chamadas)
     volumes:
-      # Configurações WSS-only
-      - ./asterisk/etc/pjsip-unified.conf:/etc/asterisk/pjsip.conf:ro
-      - ./asterisk/etc/http-wss.conf:/etc/asterisk/http.conf:ro
-      - ./asterisk/etc/extensions.conf:/etc/asterisk/extensions.conf:ro
-      - ./asterisk/etc/manager.conf:/etc/asterisk/manager.conf:ro
-      - ./asterisk/etc/modules.conf:/etc/asterisk/modules.conf:ro
-      - ./asterisk/etc/rtp.conf:/etc/asterisk/rtp.conf:ro
-      - ./asterisk/etc/asterisk.conf:/etc/asterisk/asterisk.conf:ro
-      - ./asterisk/etc/logger.conf:/etc/asterisk/logger.conf:ro
+      # Mapeia todo o diretório de configuração (leitura/escrita para permitir substituição de variáveis)
+      - ./asterisk/etc:/etc/asterisk
+      # Mapeia sons customizados (ex: URA)
       - ./asterisk/sounds:/var/lib/asterisk/sounds
-      - ./asterisk/recordings:/var/spool/asterisk/monitor
-      # Volume para certificados WSS
+      # Gravações de chamadas em um volume nomeado para persistência
+      - asterisk_recordings:/var/spool/asterisk/monitor
+      # Certificados em um volume nomeado para que não sejam recriados sempre
       - asterisk_certs:/etc/asterisk/keys
+    env_file:
+      - .env
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
-      - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
-      - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD:-changeme_update_this}
     depends_on:
       cert-generator:
         condition: service_completed_successfully
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "asterisk -rx 'core show version' && asterisk -rx 'http show status'"]
+      test: ["CMD-SHELL", "asterisk -rx 'core show version' >/dev/null 2>&1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -88,7 +84,7 @@ services:
       - ./apps/api/.env
     environment:
       - NODE_ENV=development
-      - ASTERISK_HOST=asterisk
+      - ASTERISK_HOST=asterisk  # Conecta ao container Asterisk na rede Docker
       - ASTERISK_PORT=5038
       - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
     depends_on:
@@ -97,7 +93,7 @@ services:
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })\""]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -131,7 +127,7 @@ services:
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })\""]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -152,7 +148,7 @@ volumes:
   asterisk_certs:
     driver: local
     name: clicktocall-asterisk-certs
-  asterisk-recordings:
+  asterisk_recordings:
     driver: local
-  asterisk-logs:
+  asterisk_logs:
     driver: local 

@@ -19,7 +19,8 @@ export const SoftphoneAdaptive = () => {
   const sessionRef = useRef<any>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
-  const agentId = 'agent-1001-wss'; // WSS-only endpoint
+  const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001-wss'; // WSS-only endpoint
+  const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
   // Configuração WSS-only (OBRIGATÓRIO para HTTPS)
   const createUA = (): JsSIP.UA => {
@@ -41,7 +42,7 @@ export const SoftphoneAdaptive = () => {
     
     const configuration = {
       sockets: [socket],
-      uri: `sip:${agentId}@clicktocall.local`,
+      uri: `sip:${agentId}@${realm}`,
       password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
       register: true
     };
@@ -174,7 +175,7 @@ export const SoftphoneAdaptive = () => {
         mediaConstraints: { audio: true, video: false },
       };
       
-      uaRef.current.call(`sip:${destination}@clicktocall.local`, options);
+      uaRef.current.call(`sip:${destination}@${realm}`, options);
     }
   };
 

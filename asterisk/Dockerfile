@@ -25,7 +25,7 @@ RUN mkdir -p /etc/asterisk/keys && \
 COPY etc/ /etc/asterisk/
 
 # Copy the startup script
-COPY run.sh /
+COPY entrypoint.sh /run.sh
 
 # Permissions
 RUN chmod +x /run.sh && \

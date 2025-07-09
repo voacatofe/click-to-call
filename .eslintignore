@@ -1,0 +1,66 @@
+# Dependências
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+**/.next/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentação
+*.md
+docs/
+README.md
+CHANGELOG.md
+LICENSE
+
+# Configuração
+.env*
+*.env
+docker-compose*.yml
+Dockerfile*
+tsconfig.json
+next.config.*
+tailwind.config.*
+postcss.config.*
+
+# Arquivos Asterisk
+recordings/
+sounds/
+certs/
+keys/
+**/recordings/
+**/sounds/
+**/certs/
+**/keys/
+
+# Cache e temporários
+.cache/
+coverage/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Git e IDEs
+.git/
+.vscode/
+.cursor/
+.idea/
+
+# Package managers
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+turbo.json
+
+# Específicos do projeto
+apps/*/dist/
+apps/*/.next/ 

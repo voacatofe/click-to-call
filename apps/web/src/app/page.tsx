@@ -82,20 +82,20 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
-          {/* Softphone Original (WS apenas) */}
+          {/* Softphone Original (WSS apenas) */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Softphone Original (WS)</h2>
+            <h2 className="text-2xl font-semibold">Softphone Original (WSS)</h2>
             <p className="text-sm text-gray-600">
-              Componente original que usa apenas WebSocket não-seguro (ws://)
+              Componente que usa apenas WebSocket Secure (wss://)
             </p>
             <Softphone />
           </div>
 
-          {/* Softphone Adaptativo (WS + WSS) */}
+          {/* Softphone Adaptativo (WSS apenas) */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Softphone Adaptativo (WS/WSS)</h2>
+            <h2 className="text-2xl font-semibold">Softphone Adaptativo (WSS)</h2>
             <p className="text-sm text-gray-600">
-              Componente que detecta automaticamente HTTP/HTTPS e usa WS ou WSS adequadamente
+              Componente que usa apenas WebSocket Secure com configurações avançadas
             </p>
             <SoftphoneAdaptive />
           </div>
@@ -121,9 +121,8 @@ export default function Home() {
               <h4 className="font-medium">Variáveis de Ambiente:</h4>
               <ul className="text-gray-600 text-xs space-y-1">
                 <li>ASTERISK_HOST: {process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost'}</li>
-                <li>WS_PORT: {process.env.NEXT_PUBLIC_ASTERISK_WS_PORT || '8088'}</li>
                 <li>WSS_PORT: {process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089'}</li>
-                <li>FORCE_PROTOCOL: {process.env.NEXT_PUBLIC_FORCE_PROTOCOL || 'auto'}</li>
+                <li>FORCE_PROTOCOL: {process.env.NEXT_PUBLIC_FORCE_PROTOCOL || 'wss'}</li>
               </ul>
             </div>
             <div>
@@ -140,26 +139,27 @@ export default function Home() {
         <div className="w-full max-w-6xl mt-4 p-4 bg-blue-50 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">📋 Como Testar</h3>
           <div className="space-y-2 text-sm">
-            <p><strong>Modo WS (Desenvolvimento):</strong></p>
-            <ul className="list-disc list-inside text-gray-600 ml-4 space-y-1">
-              <li>Acesse via HTTP: <code>http://localhost:3000</code></li>
-              <li>Ambos componentes devem usar WS (ws://localhost:8088/ws)</li>
-              <li>Componente adaptativo mostra "WS" no status</li>
-            </ul>
-            
-            <p className="mt-4"><strong>Modo WSS (Produção):</strong></p>
+            <p><strong>Modo WSS (Seguro):</strong></p>
             <ul className="list-disc list-inside text-gray-600 ml-4 space-y-1">
               <li>Acesse via HTTPS: <code>https://localhost:3000</code></li>
-              <li>Aceite o certificado auto-assinado no navegador</li>
-              <li>Componente adaptativo deve usar WSS (wss://localhost:8089/ws)</li>
-              <li>Fallback para WS se WSS falhar</li>
+              <li>Ambos componentes usam WSS (wss://localhost:8089/ws)</li>
+              <li>Componentes mostram "WSS" no status</li>
+              <li>🔒 <strong>Conexão Segura e Criptografada</strong></li>
+            </ul>
+            
+            <p className="mt-4"><strong>Configuração Atual:</strong></p>
+            <ul className="list-disc list-inside text-gray-600 ml-4 space-y-1">
+              <li>Protocolo: <strong>WSS (WebSocket Secure)</strong></li>
+              <li>Porta: <strong>8089</strong></li>
+              <li>Endpoint: <strong>agent-1001-wss</strong></li>
+              <li>Segurança: <strong>DTLS + SRTP habilitados</strong></li>
             </ul>
 
-            <p className="mt-4"><strong>Scripts de Configuração:</strong></p>
+            <p className="mt-4"><strong>Comandos Úteis:</strong></p>
             <ul className="list-disc list-inside text-gray-600 ml-4 space-y-1">
-              <li><code>.\scripts\setup-wss.ps1 ws</code> - Modo WS apenas</li>
-              <li><code>.\scripts\setup-wss.ps1 wss</code> - Modo WS + WSS</li>
-              <li><code>.\scripts\setup-wss.ps1 test</code> - Testar conectividade</li>
+              <li><code>docker-compose up</code> - Iniciar sistema WSS-only</li>
+              <li><code>docker-compose logs asterisk</code> - Ver logs do Asterisk</li>
+              <li><code>docker-compose restart asterisk</code> - Reiniciar Asterisk</li>
             </ul>
           </div>
         </div>
