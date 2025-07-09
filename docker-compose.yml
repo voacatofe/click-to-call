@@ -4,7 +4,6 @@ services:
   # =============================================================================
   cert-generator:
     image: alpine:3.18
-    container_name: clicktocall-cert-generator
     volumes:
       - asterisk_certs:/certs
     command: 
@@ -36,7 +35,6 @@ services:
     build:
       context: ./asterisk
       dockerfile: Dockerfile
-    container_name: clicktocall-voip
     restart: unless-stopped
     ports:
       # AMI (apenas localhost, por segurança)
@@ -80,7 +78,6 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: clicktocall-backend
     restart: unless-stopped
     # A porta será gerenciada pelo proxy reverso do Easypanel
     # ports:
@@ -133,7 +130,6 @@ services:
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    container_name: clicktocall-frontend
     restart: unless-stopped
     # A porta será gerenciada pelo proxy reverso do Easypanel
     # ports:
