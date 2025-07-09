@@ -76,8 +76,9 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: clicktocall-backend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    # A porta será gerenciada pelo proxy reverso do Easypanel
+    # ports:
+    #   - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -128,8 +129,9 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     container_name: clicktocall-frontend
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # A porta será gerenciada pelo proxy reverso do Easypanel
+    # ports:
+    #   - "3000:3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
