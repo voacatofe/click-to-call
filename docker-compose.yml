@@ -39,8 +39,6 @@ services:
     ports:
       # AMI (apenas localhost, por segurança)
       - "127.0.0.1:5038:5038"
-      # WSS (exposto para o proxy do Easypanel)
-      - "8089:8089"
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:

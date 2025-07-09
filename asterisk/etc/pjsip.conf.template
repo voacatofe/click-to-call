@@ -15,12 +15,10 @@ default_realm=clicktocall.local
 ; Transporte WebSocket Seguro (WSS)
 ; Define como o Asterisk escuta por conexões WebRTC.
 ;--------------------------------------------------------------------------------
-[transport-wss]
+[transport-ws]
 type=transport
-protocol=wss
-bind=0.0.0.0:8089
-external_media_address=${EXTERNAL_IP}
-external_signaling_address=${EXTERNAL_IP}
+protocol=ws
+bind=0.0.0.0:8088
 
 ;--------------------------------------------------------------------------------
 ; TEMPLATES DE CONFIGURAÇÃO
@@ -52,7 +50,7 @@ allow=ulaw          ; Codec de áudio padrão, para compatibilidade.
 rtp_symmetric=yes   ; Essencial para NAT - envia mídia de volta para a origem.
 
 ; Configurações WebRTC essenciais
-transport=transport-wss
+transport=transport-ws
 media_encryption=dtls
 dtls_verify=fingerprint
 dtls_setup=actpass
@@ -73,15 +71,15 @@ media_address=${EXTERNAL_IP}
 ;--------------------------------------------------------------------------------
 
 ; Autenticação para o agente 1001
-[agent-1001-auth](auth-template)
+[auth-agent-1001](auth-template)
 password=${AGENT_1001_PASSWORD}
-username=agent-1001-wss
+username=agent-1001
 
 ; Endereço (AOR) para o agente 1001
-[agent-1001-wss](aor-template)
+[aor-agent-1001](aor-template)
 ; Nenhuma configuração extra necessária, o nome da seção agora corresponde ao endpoint.
 
 ; Endpoint (configuração técnica) para o agente 1001
-[agent-1001-wss](endpoint-template)
-aors=agent-1001-wss  ; Associa este endpoint ao seu endereço (AOR) de mesmo nome.
-auth=agent-1001-auth ; Associa este endpoint à sua autenticação. 
+[agent-1001](endpoint-template)
+aors=agent-1001  ; Associa este endpoint ao seu endereço (AOR) de mesmo nome.
+auth=auth-agent-1001 ; Associa este endpoint à sua autenticação. 

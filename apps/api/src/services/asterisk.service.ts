@@ -57,7 +57,7 @@ class AsteriskService extends EventEmitter {
       channel: `PJSIP/${agentId}`,
       context: 'from-internal',
       exten: toNumber,
-      priority: 1,
+          priority: 1,
       callerid: `Click-to-Call <${companyId}>`,
       variable: {
         COMPANY_ID: companyId
@@ -69,7 +69,7 @@ class AsteriskService extends EventEmitter {
         if (err) {
           return reject(err);
         }
-        resolve(res);
+          resolve(res);
       });
     });
   }

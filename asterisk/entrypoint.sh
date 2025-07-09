@@ -1,33 +1,29 @@
 #!/bin/sh
 set -e
 
-PJSIP_CONFIG_FILE="/etc/asterisk/pjsip.conf"
-RTP_CONFIG_FILE="/etc/asterisk/rtp.conf"
-MANAGER_CONFIG_FILE="/etc/asterisk/manager.conf"
-
 echo "Gerando arquivos de configuração a partir dos templates..."
-cp "${PJSIP_CONFIG_FILE}.template" "$PJSIP_CONFIG_FILE"
-cp "${RTP_CONFIG_FILE}.template" "$RTP_CONFIG_FILE"
-cp "${MANAGER_CONFIG_FILE}.template" "$MANAGER_CONFIG_FILE"
 
-# Substitui a senha do agente em pjsip.conf
-if [ -n "$AGENT_1001_PASSWORD" ]; then
-    echo "Configurando senha do agente..."
-    sed -i "s|\${AGENT_1001_PASSWORD}|$AGENT_1001_PASSWORD|g" "$PJSIP_CONFIG_FILE"
-fi
-
-# Substitui o IP externo em pjsip.conf e rtp.conf
-if [ -n "$EXTERNAL_IP" ]; then
-    echo "Configurando NAT com IP externo: $EXTERNAL_IP"
-    sed -i "s|\${EXTERNAL_IP}|$EXTERNAL_IP|g" "$PJSIP_CONFIG_FILE"
-    sed -i "s|\${EXTERNAL_IP}|$EXTERNAL_IP|g" "$RTP_CONFIG_FILE"
-fi
-
-# Substitui a senha do AMI em manager.conf
-if [ -n "$AMI_SECRET" ]; then
-    echo "Configurando senha do AMI..."
-    sed -i "s|\${AMI_SECRET}|$AMI_SECRET|g" "$MANAGER_CONFIG_FILE"
-fi
+# Itera sobre todos os arquivos .template no diretório
+for template_path in /etc/asterisk/*.template; do
+  # Define o nome do arquivo de configuração final
+  config_file=$(echo "$template_path" | sed 's/\.template$//')
+  
+  echo "Processando $template_path -> $config_file"
+  
+  # Copia o template para o arquivo final
+  cp "$template_path" "$config_file"
+  
+  # Substitui as variáveis de ambiente no arquivo final
+  if [ -n "$AGENT_1001_PASSWORD" ]; then
+    sed -i "s|\${AGENT_1001_PASSWORD}|$AGENT_1001_PASSWORD|g" "$config_file"
+  fi
+  if [ -n "$EXTERNAL_IP" ]; then
+    sed -i "s|\${EXTERNAL_IP}|$EXTERNAL_IP|g" "$config_file"
+  fi
+  if [ -n "$AMI_SECRET" ]; then
+    sed -i "s|\${AMI_SECRET}|$AMI_SECRET|g" "$config_file"
+  fi
+done
 
 echo "Ajustando permissões..."
 chown -R asterisk:asterisk /etc/asterisk/
