@@ -79,21 +79,35 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=development
-      - ASTERISK_HOST=voip  # Conecta ao container Asterisk na rede Docker
+      - NODE_ENV=production
+      - PORT=3001
+      - ASTERISK_HOST=voip
       - ASTERISK_PORT=5038
+      - ASTERISK_AMI_PORT=5038
+      - ASTERISK_AMI_USER=admin
+      - ASTERISK_AMI_PASSWORD=${AMI_SECRET:-changeme_update_this}
       - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET:-64a97de5b7422c06c9116bb96b076e3a396c3c92b27e87d5005dc345dc4aa2c9}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - RD_STATION_CLIENT_ID=${RD_STATION_CLIENT_ID}
+      - RD_STATION_CLIENT_SECRET=${RD_STATION_CLIENT_SECRET}
+      - RD_STATION_API_BASE=https://api.rd.services
+      - RD_STATION_REDIRECT_URI=${RD_STATION_REDIRECT_URI}
     depends_on:
       voip:
         condition: service_healthy
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })\""]
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      timeout: 15s
+      retries: 5
+      start_period: 40s
 
   # =============================================================================
   # Frontend Service
@@ -116,10 +130,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    # As variáveis de ambiente aqui são para tempo de execução, mas o build já as injetou.
-    # Manter para consistência ou para outros possíveis usos em tempo de execução.
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
       - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST:-localhost}
       - NEXT_PUBLIC_ASTERISK_WSS_PORT=${NEXT_PUBLIC_ASTERISK_WSS_PORT:-8089}
@@ -135,11 +147,11 @@ services:
     networks:
       - clicktocall-network
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })\""]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
 
 # =============================================================================
 # Networks Configuration

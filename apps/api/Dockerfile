@@ -17,6 +17,10 @@ RUN npm i -g pnpm && pnpm install && pnpm turbo run build --filter=api
 # 3. Runner
 FROM node:18-alpine AS runner
 WORKDIR /app
+
+# Instalar curl para health check
+RUN apk add --no-cache curl
+
 ENV NODE_ENV=production
 ENV DOCKER_ENV=true
 
@@ -32,5 +36,7 @@ RUN npm i -g pnpm && pnpm install --prod
 
 # Copia o código compilado da API
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
+
+EXPOSE 3001
 
 CMD ["node", "apps/api/dist/index.js"] 

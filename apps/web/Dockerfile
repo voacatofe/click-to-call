@@ -41,8 +41,13 @@ RUN npm i -g pnpm && pnpm install && pnpm turbo run build --filter=web
 # 3. Runner
 FROM node:18-alpine AS runner
 WORKDIR /app
+
+# Instalar curl para health check
+RUN apk add --no-cache curl
+
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
 # Copia todos os manifestos do monorepo
 COPY package.json pnpm-lock.yaml ./
@@ -54,11 +59,13 @@ COPY apps/web/package.json ./apps/web/
 # Instala TODAS as dependências de produção do monorepo
 RUN npm i -g pnpm && pnpm install --prod
 
-# Copia os artefatos de build da web
+# Copia os arquivos da aplicação
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/next.config.ts ./apps/web/
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
 
 USER nextjs
+
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter web start"] 
+
+CMD ["pnpm", "--filter", "web", "start"] 
