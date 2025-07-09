@@ -41,7 +41,7 @@ services:
       - "127.0.0.1:5038:5038"      # Asterisk Manager Interface (AMI) - localhost only
       # WS removido - WSS-only for security
       - "127.0.0.1:8089:8089"      # WebSocket Secure (WSS) ONLY - localhost only
-      - "10000-20000:10000-20000/udp" # RTP media ports
+      - "10000-20000:10000-20000/udp" # RTP media ports (EXPANDIDO: 10.000 portas)
     volumes:
       # Configurações WSS-only
       - ./asterisk/etc/pjsip-unified.conf:/etc/asterisk/pjsip.conf:ro

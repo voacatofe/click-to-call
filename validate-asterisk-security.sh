@@ -116,8 +116,8 @@ echo ""
 echo "🎯 VALIDANDO CONFIGURAÇÕES AMI..."
 echo "==================================="
 
-# 10. Verificar permissão 'command' perigosa
-if grep -q "command" asterisk/etc/manager.conf 2>/dev/null; then
+# 10. Verificar permissão 'command' perigosa (somente em linhas ativas)
+if grep -E "^(read|write).*command" asterisk/etc/manager.conf 2>/dev/null; then
     report_issue "Permissão 'command' encontrada no AMI - permite execução de comandos shell"
     echo "   📋 Risco: Execução remota de comandos no sistema"
     echo "   📋 Solução: Remover 'command' das permissões read/write"
