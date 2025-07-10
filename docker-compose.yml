@@ -1,7 +1,24 @@
 services:
-  # =============================================================================
-  # VoIP Service (Asterisk)
-  # =============================================================================
+  cert-generator:
+    image: alpine:3.18
+    volumes:
+      - asterisk_certs:/etc/asterisk/keys
+    command: >
+      sh -c "
+        apk add --no-cache openssl &&
+        if [ ! -f /etc/asterisk/keys/asterisk.pem ]; then
+          echo 'Gerando novos certificados para Asterisk...' &&
+          openssl req -x509 -nodes -newkey rsa:4096 -days 3650 \
+            -keyout /etc/asterisk/keys/asterisk.pem \
+            -out /etc/asterisk/keys/asterisk.pem \
+            -subj '/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall/CN=clicktocall.local' &&
+          chmod -R 600 /etc/asterisk/keys/asterisk.pem;
+        else
+          echo 'Certificados já existem.'
+        fi
+      "
+    restart: "no"
+  
   voip:
     build:
       context: ./asterisk
@@ -16,12 +33,15 @@ services:
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
+      - asterisk_certs:/etc/asterisk/keys
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
       - AMI_SECRET=${AMI_SECRET}
       - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD}
       - EXTERNAL_IP=${EXTERNAL_IP}
+    depends_on:
+      - cert-generator
     networks:
       - clicktocall-network
     healthcheck:
@@ -121,6 +141,7 @@ networks:
 # Volumes Configuration
 # =============================================================================
 volumes:
+  asterisk_certs:
   asterisk_recordings:
     driver: local
   asterisk_logs:
