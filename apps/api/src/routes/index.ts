@@ -2,6 +2,7 @@ import { Router } from 'express';
 import callRoutes from './call.routes';
 import companyRoutes from './company.routes';
 import rdcrmRoutes from './rdcrm.routes';
+import webrtcRoutes from './webrtc.routes';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.get('/health', (req, res) => {
 router.use('/calls', callRoutes);
 router.use('/companies', companyRoutes);
 router.use('/rdcrm', rdcrmRoutes);
+router.use('/webrtc', webrtcRoutes);
 
 export default router; 

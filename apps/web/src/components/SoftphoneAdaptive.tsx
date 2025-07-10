@@ -15,8 +15,8 @@ const logger = {
 const SoftphoneAdaptive = () => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
+  const [session, setSession] = useState<JsSIP.RTCSession | null>(null);
   const uaRef = useRef<JsSIP.UA | null>(null);
-  const sessionRef = useRef<any>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001-wss'; // WSS-only endpoint
@@ -24,7 +24,18 @@ const SoftphoneAdaptive = () => {
 
   const connect = useCallback(async () => {
     try {
-      // Configuração para produção via Reverse Proxy (Easypanel)
+      setStatus('Obtendo config. de rede...');
+      
+      // 1. Busca os servidores ICE (STUN/TURN) do nosso backend
+      const response = await fetch('/api/webrtc/ice-servers');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ICE servers: ${response.statusText}`);
+      }
+      const iceServers = await response.json();
+
+      setStatus('Conectando...');
+
+      // 2. Configura o JsSIP com as credenciais recebidas
       const host = process.env.NEXT_PUBLIC_ASTERISK_HOST;
       const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH || '/ws';
       const password = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
@@ -32,40 +43,31 @@ const SoftphoneAdaptive = () => {
       const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
       if (!host || !password) {
-        throw new Error('Variáveis de ambiente essenciais para o softphone não configuradas.');
+        throw new Error('Variáveis de ambiente do softphone não configuradas.');
       }
       
       const socket = new JsSIP.WebSocketInterface(`wss://${host}${websocketPath}`);
       
-      const configuration = {
+      const configuration: JsSIP.UAConfiguration = {
         sockets: [socket],
         uri: `sip:${agentId}@${realm}`,
         password: password,
         register: true,
+        // 3. Usa os servidores ICE da Twilio
+        ice_servers: iceServers,
       };
 
       const ua = new JsSIP.UA(configuration);
       uaRef.current = ua;
+
+      ua.on('registered', () => setStatus('Online'));
+      ua.on('unregistered', () => setStatus('Desconectado'));
+      ua.on('registrationFailed', (e) => setStatus(`Falha no Registro: ${e?.cause || 'Unknown'}`));
       
-      ua.on('registered', () => {
-        logger.info('[WSS] Registrado com sucesso via WebSocket Secure');
-        setStatus('Registrado (WSS)');
-      });
-
-      ua.on('unregistered', () => {
-        logger.debug('[WSS] Não registrado');
-        setStatus('Não Registrado');
-      });
-
-      ua.on('registrationFailed', (e: any) => {
-        logger.error('[WSS] Falha no registro WSS:', e.cause || 'Unknown error');
-        setStatus(`Falha WSS: ${e.cause || 'Connection error'}`);
-      });
-
-      ua.on('newRTCSession', (data: any) => {
+      ua.on('newRTCSession', (data) => {
         logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
         const session = data.session;
-        sessionRef.current = session;
+        setSession(session);
 
         session.on('peerconnection', (e: any) => {
           logger.debug('[WebRTC] PeerConnection criada via WSS');
@@ -120,7 +122,7 @@ const SoftphoneAdaptive = () => {
 
     } catch (error) {
       console.error('Falha ao configurar ou iniciar o softphone:', error);
-      setStatus('Erro de Configuração');
+      setStatus(`Erro: ${error instanceof Error ? error.message : 'Desconhecido'}`);
     }
   }, []);
 
@@ -177,9 +179,9 @@ const SoftphoneAdaptive = () => {
   };
 
   const handleHangup = () => {
-    if (sessionRef.current) {
+    if (session) {
       logger.debug('[WSS] Finalizando chamada');
-      sessionRef.current.terminate();
+      session.terminate();
     }
   };
 
@@ -191,7 +193,7 @@ const SoftphoneAdaptive = () => {
   };
 
   const getStatusColor = () => {
-    if (status.includes('Registrado')) return 'text-green-600';
+    if (status.includes('Online')) return 'text-green-600';
     if (status.includes('Falha') || status.includes('Erro')) return 'text-red-600';
     if (status.includes('Em chamada')) return 'text-blue-600';
     return 'text-gray-600';

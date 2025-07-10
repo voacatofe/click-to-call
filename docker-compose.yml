@@ -71,6 +71,8 @@ services:
       - RD_STATION_CLIENT_SECRET=${RD_STATION_CLIENT_SECRET}
       - RD_STATION_API_BASE=https://api.rd.services
       - RD_STATION_REDIRECT_URI=${RD_STATION_REDIRECT_URI}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
     depends_on:
       voip:
         condition: service_healthy
