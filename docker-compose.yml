@@ -1,6 +1,6 @@
 services:
   cert-generator:
-    image: alpQual a ine:3.18
+    image: alpine:3.18
     volumes:
       - asterisk_certs:/etc/asterisk/keys
       - ./asterisk/generate_certs.sh:/usr/local/bin/generate_certs.sh
