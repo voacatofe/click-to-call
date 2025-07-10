@@ -63,7 +63,7 @@ const SoftphoneAdaptive = () => {
       ua.on('unregistered', () => setStatus('Desconectado'));
       ua.on('registrationFailed', (e) => setStatus(`Falha no Registro: ${e?.cause || 'Unknown'}`));
       
-      ua.on('newRTCSession', (data) => {
+      ua.on('newRTCSession', (data: any) => {
         logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
         const session = data.session;
         setSession(session);
