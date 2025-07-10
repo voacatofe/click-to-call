@@ -37,7 +37,7 @@ const SoftphoneAdaptive = () => {
       
       const socket = new JsSIP.WebSocketInterface(`wss://${host}${websocketPath}`);
       
-      const configuration: JsSIP.UAConfiguration = {
+      const configuration = {
         sockets: [socket],
         uri: `sip:${agentId}@${realm}`,
         password: password,
