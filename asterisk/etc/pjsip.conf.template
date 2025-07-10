@@ -7,12 +7,12 @@ bind=0.0.0.0:8088
 type=transport
 protocol=wss
 bind=0.0.0.0:8089
-cert_file=/etc/asterisk/keys/asterisk.crt
-priv_key_file=/etc/asterisk/keys/asterisk.key
-method=tlsv1_2
+cert_file=/etc/letsencrypt-host/live/click-to-call-clicktocal.hvlihi.easypanel.host/fullchain.pem
+priv_key_file=/etc/letsencrypt-host/live/click-to-call-clicktocal.hvlihi.easypanel.host/privkey.pem
 
 [agent-1001]
 type=endpoint
+transport=transport-wss
 context=from-internal
 disallow=all
 allow=ulaw,alaw,opus,vp8
@@ -24,8 +24,6 @@ direct_media=yes
 webrtc=yes
 dtls_verify=fingerprint
 dtls_setup=actpass
-dtls_cert_file=/etc/asterisk/keys/asterisk.pem
-dtls_private_key=/etc/asterisk/keys/asterisk.pem
 
 [agent-1001]
 type=aor
