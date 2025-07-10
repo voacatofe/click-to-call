@@ -14,15 +14,15 @@ for template_path in /etc/asterisk/*.template; do
   cp "$template_path" "$config_file"
   
   # Substitui as variáveis de ambiente no arquivo final
-  if [ -n "$AGENT_1001_PASSWORD" ]; then
+if [ -n "$AGENT_1001_PASSWORD" ]; then
     sed -i "s|\${AGENT_1001_PASSWORD}|$AGENT_1001_PASSWORD|g" "$config_file"
-  fi
-  if [ -n "$EXTERNAL_IP" ]; then
+fi
+if [ -n "$EXTERNAL_IP" ]; then
     sed -i "s|\${EXTERNAL_IP}|$EXTERNAL_IP|g" "$config_file"
   fi
   if [ -n "$AMI_SECRET" ]; then
     sed -i "s|\${AMI_SECRET}|$AMI_SECRET|g" "$config_file"
-  fi
+fi
 done
 
 echo "Ajustando permissões..."

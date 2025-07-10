@@ -11,7 +11,7 @@ services:
         /usr/local/bin/generate_certs.sh
       "
     restart: "no"
-  
+      
   voip:
     build:
       context: ./asterisk
@@ -140,4 +140,4 @@ volumes:
   asterisk_recordings:
     driver: local
   asterisk_logs:
-    driver: local
+    driver: local 
