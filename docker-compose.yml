@@ -8,21 +8,17 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      # AMI (apenas localhost, por segurança)
-      - "127.0.0.1:5038:5038"
+      # A porta AMI 5038 não precisa ser exposta, pois a comunicação é interna.
+      # - "127.0.0.1:5038:5038"
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
-      # Mapeia todo o diretório de configuração (leitura/escrita para permitir substituição de variáveis)
       - ./asterisk/etc:/etc/asterisk
-      # Mapeia sons customizados (ex: URA)
       - ./asterisk/sounds:/var/lib/asterisk/sounds
-      # Gravações de chamadas em um volume nomeado para persistência
       - asterisk_recordings:/var/spool/asterisk/monitor
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
-      # Passando as variáveis para o entrypoint.sh para configurar o Asterisk
       - AMI_SECRET=${AMI_SECRET}
       - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD}
       - EXTERNAL_IP=${EXTERNAL_IP}
@@ -43,9 +39,6 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
-    # A porta será gerenciada pelo proxy reverso do Easypanel
-    # ports:
-    #   - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -53,13 +46,13 @@ services:
       - ASTERISK_PORT=5038
       - ASTERISK_AMI_PORT=5038
       - ASTERISK_AMI_USER=admin
-      - ASTERISK_AMI_PASSWORD=${AMI_SECRET:-changeme_update_this}
-      - AMI_SECRET=${AMI_SECRET:-changeme_update_this}
+      - ASTERISK_AMI_PASSWORD=${AMI_SECRET}
+      - AMI_SECRET=${AMI_SECRET}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET:-64a97de5b7422c06c9116bb96b076e3a396c3c92b27e87d5005dc345dc4aa2c9}
+      - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
       - RD_STATION_CLIENT_ID=${RD_STATION_CLIENT_ID}
       - RD_STATION_CLIENT_SECRET=${RD_STATION_CLIENT_SECRET}
@@ -85,7 +78,6 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Removido NEXT_PUBLIC_ASTERISK_WSS_PORT, pois o proxy gerencia a porta
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST}
         NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
@@ -132,4 +124,4 @@ volumes:
   asterisk_recordings:
     driver: local
   asterisk_logs:
-    driver: local 
+    driver: local
