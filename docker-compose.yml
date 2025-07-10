@@ -3,19 +3,12 @@ services:
     image: alpine:3.18
     volumes:
       - asterisk_certs:/etc/asterisk/keys
+      - ./asterisk/generate_certs.sh:/usr/local/bin/generate_certs.sh
     command: >
       sh -c "
         apk add --no-cache openssl &&
-        if [ ! -f /etc/asterisk/keys/asterisk.pem ]; then
-          echo 'Gerando novos certificados para Asterisk...' &&
-          openssl req -x509 -nodes -newkey rsa:4096 -days 3650 \
-            -keyout /etc/asterisk/keys/asterisk.pem \
-            -out /etc/asterisk/keys/asterisk.pem \
-            -subj '/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall/CN=clicktocall.local' &&
-          chmod -R 600 /etc/asterisk/keys/asterisk.pem;
-        else
-          echo 'Certificados já existem.'
-        fi
+        chmod +x /usr/local/bin/generate_certs.sh &&
+        /usr/local/bin/generate_certs.sh
       "
     restart: "no"
   
