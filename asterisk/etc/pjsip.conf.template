@@ -17,15 +17,15 @@ context=from-internal
 disallow=all
 allow=ulaw,alaw,opus,vp8
 auth=agent-1001-auth
-aors=agent-1001
+aors=agent-1001-aor
 rtp_symmetric=yes
 force_rport=yes
-direct_media=yes
+direct_media=no
 webrtc=yes
 dtls_verify=fingerprint
 dtls_setup=actpass
 
-[agent-1001]
+[agent-1001-aor]
 type=aor
 max_contacts=1
 
