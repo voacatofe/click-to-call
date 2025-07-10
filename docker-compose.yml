@@ -1,34 +1,5 @@
 services:
   # =============================================================================
-  # Certificate Generator (Geração automática de certificados WSS)
-  # =============================================================================
-  cert-generator:
-    image: alpine:3.18
-    volumes:
-      - asterisk_certs:/certs
-    command: 
-      - sh
-      - -c
-      - |
-        apk add --no-cache openssl
-        if [ ! -f /certs/asterisk.crt ]; then
-          echo 'Gerando certificados WSS para ambiente seguro...'
-          mkdir -p /certs
-          openssl genrsa -out /certs/asterisk.key 2048
-          openssl req -new -x509 -key /certs/asterisk.key -out /certs/asterisk.crt -days 365 \
-            -subj '/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall/CN=localhost' \
-            -addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1,IP:::1"
-          chmod 600 /certs/asterisk.key
-          chmod 644 /certs/asterisk.crt
-          echo 'Certificados WSS gerados com sucesso!'
-        else
-          echo 'Certificados WSS já existem.'
-        fi
-    restart: "no"
-    networks:
-      - clicktocall-network
-      
-  # =============================================================================
   # VoIP Service (Asterisk)
   # =============================================================================
   voip:
@@ -48,8 +19,6 @@ services:
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       # Gravações de chamadas em um volume nomeado para persistência
       - asterisk_recordings:/var/spool/asterisk/monitor
-      # Certificados em um volume nomeado para que não sejam recriados sempre
-      - asterisk_certs:/etc/asterisk/keys
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
@@ -57,9 +26,6 @@ services:
       - AMI_SECRET=${AMI_SECRET}
       - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD}
       - EXTERNAL_IP=${EXTERNAL_IP}
-    depends_on:
-      cert-generator:
-        condition: service_completed_successfully
     networks:
       - clicktocall-network
     healthcheck:
@@ -119,27 +85,23 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-        NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST:-localhost}
-        NEXT_PUBLIC_ASTERISK_WSS_PORT: ${NEXT_PUBLIC_ASTERISK_WSS_PORT:-8089}
-        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD:-changeme}
-        NEXT_PUBLIC_FORCE_PROTOCOL: ${NEXT_PUBLIC_FORCE_PROTOCOL:-wss}
-        NEXT_PUBLIC_AGENT_ID: ${NEXT_PUBLIC_AGENT_ID:-agent-1001-wss}
+        # Removido NEXT_PUBLIC_ASTERISK_WSS_PORT, pois o proxy gerencia a porta
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST}
+        NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
+        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
+        NEXT_PUBLIC_AGENT_ID: ${NEXT_PUBLIC_AGENT_ID:-agent-1001}
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
-    # A porta será gerenciada pelo proxy reverso do Easypanel
-    # ports:
-    #   - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-      - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST:-localhost}
-      - NEXT_PUBLIC_ASTERISK_WSS_PORT=${NEXT_PUBLIC_ASTERISK_WSS_PORT:-8089}
-      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD:-changeme}
-      - NEXT_PUBLIC_FORCE_PROTOCOL=${NEXT_PUBLIC_FORCE_PROTOCOL:-wss}
-      - NEXT_PUBLIC_AGENT_ID=${NEXT_PUBLIC_AGENT_ID:-agent-1001-wss}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST}
+      - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
+      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
+      - NEXT_PUBLIC_AGENT_ID=${NEXT_PUBLIC_AGENT_ID:-agent-1001}
       - NEXT_PUBLIC_ASTERISK_REALM=${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -167,9 +129,6 @@ networks:
 # Volumes Configuration
 # =============================================================================
 volumes:
-  asterisk_certs:
-    driver: local
-    name: clicktocall-asterisk-certs
   asterisk_recordings:
     driver: local
   asterisk_logs:

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as JsSIP from 'jssip';
 
 // Sistema de log baseado em environment - Next.js compatível
@@ -12,7 +12,7 @@ const logger = {
   warn: console.warn
 };
 
-export const SoftphoneAdaptive = () => {
+const SoftphoneAdaptive = () => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
   const uaRef = useRef<JsSIP.UA | null>(null);
@@ -22,104 +22,107 @@ export const SoftphoneAdaptive = () => {
   const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001-wss'; // WSS-only endpoint
   const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
-  // Configuração WSS-only (OBRIGATÓRIO para HTTPS)
-  const createUA = (): JsSIP.UA => {
-    const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
-    const wssPort = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
-    
-    // FORÇAR WSS para segurança - nunca WS em ambiente HTTPS
-    const wsUrl = `wss://${host}:${wssPort}/ws`;
-    
-    logger.debug(`[WSS-ONLY] Criando UA com configuração segura:`, {
-      protocol: 'wss (FORCED)',
-      port: wssPort,
-      endpoint: agentId,
-      url: wsUrl,
-      security: 'ENCRYPTED'
-    });
+  const connect = useCallback(async () => {
+    try {
+      // Configuração para produção via Reverse Proxy (Easypanel)
+      const host = process.env.NEXT_PUBLIC_ASTERISK_HOST;
+      const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH || '/ws';
+      const password = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
+      const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001';
+      const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
-    const socket = new JsSIP.WebSocketInterface(wsUrl);
-    
-    const configuration = {
-      sockets: [socket],
-      uri: `sip:${agentId}@${realm}`,
-      password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
-      register: true
-    };
+      if (!host || !password) {
+        throw new Error('Variáveis de ambiente essenciais para o softphone não configuradas.');
+      }
+      
+      const socket = new JsSIP.WebSocketInterface(`wss://${host}${websocketPath}`);
+      
+      const configuration: JsSIP.UAConfiguration = {
+        sockets: [socket],
+        uri: `sip:${agentId}@${realm}`,
+        password: password,
+        register: true,
+      };
 
-    return new JsSIP.UA(configuration);
-  };
-
-  const setupUA = (ua: JsSIP.UA) => {
-    ua.on('registered', () => {
-      logger.info('[WSS] Registrado com sucesso via WebSocket Secure');
-      setStatus('Registrado (WSS)');
-    });
-
-    ua.on('unregistered', () => {
-      logger.debug('[WSS] Não registrado');
-      setStatus('Não Registrado');
-    });
-
-    ua.on('registrationFailed', (e: any) => {
-      logger.error('[WSS] Falha no registro WSS:', e.cause || 'Unknown error');
-      setStatus(`Falha WSS: ${e.cause || 'Connection error'}`);
-    });
-
-    ua.on('newRTCSession', (data: any) => {
-      logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
-      const session = data.session;
-      sessionRef.current = session;
-
-      session.on('peerconnection', (e: any) => {
-        logger.debug('[WebRTC] PeerConnection criada via WSS');
-        
-        const pc = e.peerconnection;
-        logger.debug('[WebRTC] Estado inicial da conexão WSS:', pc.connectionState);
-        
-        pc.addEventListener('connectionstatechange', () => {
-          logger.debug('[WebRTC] Estado da conexão WSS:', pc.connectionState);
-        });
-        
-        pc.addEventListener('iceconnectionstatechange', () => {
-          logger.debug('[WebRTC] Estado ICE WSS:', pc.iceConnectionState);
-        });
-
-        pc.addEventListener('track', (event: any) => {
-          logger.debug('[WebRTC] Track recebida via WSS');
-          
-          if (remoteAudioRef.current && event.streams[0]) {
-            logger.debug('[WebRTC] Configurando áudio remoto WSS');
-            remoteAudioRef.current.srcObject = event.streams[0];
-            
-            remoteAudioRef.current.play().then(() => {
-              logger.debug('[WebRTC] Áudio WSS iniciado com sucesso');
-            }).catch(err => {
-              logger.error('[WebRTC] Erro ao reproduzir áudio WSS:', err);
-            });
-          }
-        });
-      });
-
-      session.on('accepted', () => {
-        logger.info('[WSS] Chamada aceita via WebSocket Secure');
-        setStatus('Em chamada (WSS)');
-        setInCall(true);
-      });
-
-      session.on('ended', () => {
-        logger.info('[WSS] Chamada finalizada');
+      const ua = new JsSIP.UA(configuration);
+      uaRef.current = ua;
+      
+      ua.on('registered', () => {
+        logger.info('[WSS] Registrado com sucesso via WebSocket Secure');
         setStatus('Registrado (WSS)');
-        setInCall(false);
       });
 
-      session.on('failed', (e: any) => {
-        logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
-        setStatus(`Chamada Falhou: ${e.cause || 'Error'}`);
-        setInCall(false);
+      ua.on('unregistered', () => {
+        logger.debug('[WSS] Não registrado');
+        setStatus('Não Registrado');
       });
-    });
-  };
+
+      ua.on('registrationFailed', (e: any) => {
+        logger.error('[WSS] Falha no registro WSS:', e.cause || 'Unknown error');
+        setStatus(`Falha WSS: ${e.cause || 'Connection error'}`);
+      });
+
+      ua.on('newRTCSession', (data: any) => {
+        logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
+        const session = data.session;
+        sessionRef.current = session;
+
+        session.on('peerconnection', (e: any) => {
+          logger.debug('[WebRTC] PeerConnection criada via WSS');
+          
+          const pc = e.peerconnection;
+          logger.debug('[WebRTC] Estado inicial da conexão WSS:', pc.connectionState);
+          
+          pc.addEventListener('connectionstatechange', () => {
+            logger.debug('[WebRTC] Estado da conexão WSS:', pc.connectionState);
+          });
+          
+          pc.addEventListener('iceconnectionstatechange', () => {
+            logger.debug('[WebRTC] Estado ICE WSS:', pc.iceConnectionState);
+          });
+
+          pc.addEventListener('track', (event: any) => {
+            logger.debug('[WebRTC] Track recebida via WSS');
+            
+            if (remoteAudioRef.current && event.streams[0]) {
+              logger.debug('[WebRTC] Configurando áudio remoto WSS');
+              remoteAudioRef.current.srcObject = event.streams[0];
+              
+              remoteAudioRef.current.play().then(() => {
+                logger.debug('[WebRTC] Áudio WSS iniciado com sucesso');
+              }).catch(err => {
+                logger.error('[WebRTC] Erro ao reproduzir áudio WSS:', err);
+              });
+            }
+          });
+        });
+
+        session.on('accepted', () => {
+          logger.info('[WSS] Chamada aceita via WebSocket Secure');
+          setStatus('Em chamada (WSS)');
+          setInCall(true);
+        });
+
+        session.on('ended', () => {
+          logger.info('[WSS] Chamada finalizada');
+          setStatus('Registrado (WSS)');
+          setInCall(false);
+        });
+
+        session.on('failed', (e: any) => {
+          logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
+          setStatus(`Chamada Falhou: ${e.cause || 'Error'}`);
+          setInCall(false);
+        });
+      });
+
+      ua.start();
+
+    } catch (error) {
+      console.error('Falha ao configurar ou iniciar o softphone:', error);
+      setStatus('Erro de Configuração');
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -131,23 +134,17 @@ export const SoftphoneAdaptive = () => {
       JsSIP.debug.enable('JsSIP:*');
     }
 
-    try {
-      const ua = createUA();
-      setupUA(ua);
-      uaRef.current = ua;
-      ua.start();
+    connect();
 
-      return () => {
-        if (ua.isRegistered()) {
-          ua.unregister();
-        }
-        ua.stop();
-      };
-    } catch (error) {
-      logger.error('[DEBUG] Erro ao iniciar Softphone WSS:', error);
-      setStatus('Erro ao iniciar WSS');
-    }
-  }, []);
+    return () => {
+      if (uaRef.current && uaRef.current.isRegistered()) {
+        uaRef.current.unregister();
+      }
+      if (uaRef.current) {
+        uaRef.current.stop();
+      }
+    };
+  }, [connect]);
 
   const handleCall = (destination: string) => {
     if (uaRef.current) {
@@ -264,4 +261,6 @@ export const SoftphoneAdaptive = () => {
       />
     </div>
   );
-}; 
+};
+
+export default SoftphoneAdaptive; 
