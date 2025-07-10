@@ -25,6 +25,24 @@ if [ -n "$EXTERNAL_IP" ]; then
 fi
 done
 
+# Gerar certificados autoassinados se não existirem
+echo "Verificando certificados SSL..."
+mkdir -p /etc/asterisk/keys
+
+if [ ! -f /etc/asterisk/keys/asterisk.crt ] || [ ! -f /etc/asterisk/keys/asterisk.key ]; then
+    echo "Gerando certificados autoassinados..."
+    openssl req -x509 -nodes -newkey rsa:2048 \
+        -keyout /etc/asterisk/keys/asterisk.key \
+        -out /etc/asterisk/keys/asterisk.crt \
+        -days 365 \
+        -subj "/C=BR/ST=State/L=City/O=Organization/CN=asterisk.local"
+    
+    # Criar também o arquivo .pem combinado para DTLS
+    cat /etc/asterisk/keys/asterisk.key /etc/asterisk/keys/asterisk.crt > /etc/asterisk/keys/asterisk.pem
+    
+    echo "Certificados gerados com sucesso!"
+fi
+
 echo "Ajustando permissões..."
 chown -R asterisk:asterisk /etc/asterisk/
 
