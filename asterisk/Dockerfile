@@ -20,8 +20,10 @@ COPY etc/ /etc/asterisk/
 COPY entrypoint.sh /run.sh
 
 # Ajusta as permissões e torna o script executável
+# Garante que o usuário asterisk seja dono de todos os arquivos de som e configuração
 RUN chmod +x /run.sh && \
     chown -R asterisk:asterisk /etc/asterisk/ && \
+    chown -R asterisk:asterisk /var/lib/asterisk/sounds/ && \
     chown asterisk:asterisk /run.sh
 
 # Define o ponto de entrada e o comando padrão
