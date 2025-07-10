@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as JsSIP from 'jssip';
+import { Phone, PhoneOff, Mic, Ear } from 'lucide-react';
 
 // Sistema de log baseado em environment - Next.js compatível
 const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
@@ -18,6 +19,7 @@ const SoftphoneAdaptive = () => {
   const [session, setSession] = useState<any | null>(null); // Deixando o tipo mais flexível
   const uaRef = useRef<JsSIP.UA | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const [destination, setDestination] = useState('9999'); // Inicia com o teste de eco
 
   const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001-wss'; // WSS-only endpoint
   const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
@@ -147,33 +149,13 @@ const SoftphoneAdaptive = () => {
     };
   }, [connect]);
 
-  const handleCall = (destination: string) => {
-    if (uaRef.current) {
-      logger.debug(`[WSS] Iniciando chamada para ${destination} via WebSocket Secure`);
-      
+  const handleCall = () => {
+    if (uaRef.current && destination) {
       const options = {
-        event_handlers: {
-          progress: (e: any) => {
-            logger.debug('[WSS] Progresso da chamada');
-            setStatus('Chamando...');
-          },
-          failed: (e: any) => {
-            logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
-            setStatus(`Falhou: ${e.cause || 'Error'}`);
-          },
-          ended: (e: any) => {
-            logger.debug('[WSS] Chamada finalizada');
-            setStatus('Finalizada');
-          },
-          accepted: (e: any) => {
-            logger.info('[WSS] Chamada aceita');
-            setStatus('Em chamada');
-          },
-        },
-        mediaConstraints: { audio: true, video: false },
+        'mediaConstraints': { 'audio': true, 'video': false },
       };
-      
-      uaRef.current.call(`sip:${destination}@${realm}`, options);
+      const session = uaRef.current.call(`sip:${destination}@${process.env.NEXT_PUBLIC_ASTERISK_REALM}`, options);
+      setSession(session);
     }
   };
 
@@ -199,67 +181,37 @@ const SoftphoneAdaptive = () => {
   };
 
   return (
-    <div className="p-4 border rounded-lg shadow-md">
-      <h2 className="text-lg font-bold">Softphone WSS-Only</h2>
-      <p>Status: <span className={`font-semibold ${getStatusColor()}`}>{status}</span></p>
-      
-      <div className="mt-2 text-sm text-gray-600">
-        <p>Protocolo: <strong>WSS (WebSocket Secure)</strong></p>
-        <p>Porta: <strong>8089</strong></p>
-        <p>Endpoint: <strong>{agentId}</strong></p>
-        <p>🔒 <strong>Conexão Segura</strong></p>
+    <div className="p-4 border rounded-lg shadow-md max-w-sm mx-auto">
+      <h3 className="text-lg font-semibold text-center mb-2">Softphone</h3>
+      <div className="text-center mb-4">
+        <p>Status: <span className={getStatusColor()}>{status}</span></p>
       </div>
-
-      <div className="mt-4 space-x-2">
-        <button
-          onClick={() => {
-            handleForceAudioPlay();
-            handleCall('9999');
-          }}
-          disabled={inCall}
-          className="px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700 disabled:bg-gray-400"
-        >
-          🔒 Teste Echo WSS (9999)
-        </button>
-        
-        <button
-          onClick={() => {
-            handleForceAudioPlay();
-            handleCall('8888');
-          }}
-          disabled={inCall}
-          className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          🔒 Teste Playback WSS (8888)
-        </button>
-        
-        <button
-          onClick={handleHangup}
-          disabled={!inCall}
-          className="px-4 py-2 font-bold text-white bg-red-500 rounded hover:bg-red-700 disabled:bg-gray-400"
-        >
-          Desligar
-        </button>
-        
-        <button
-          onClick={handleForceAudioPlay}
-          className="px-4 py-2 font-bold text-white bg-purple-500 rounded hover:bg-purple-700"
-        >
-          🔊 Ativar Áudio WSS
-        </button>
+      <div className="flex flex-col gap-2">
+        <input
+          type="text"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          placeholder="Digite o número"
+          className="p-2 border rounded"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleCall}
+            disabled={inCall || status !== 'Online'}
+            className="flex-1 bg-green-500 text-white p-2 rounded disabled:bg-gray-400 flex items-center justify-center gap-2"
+          >
+            <Phone size={18} /> Ligar
+          </button>
+          <button
+            onClick={handleHangup}
+            disabled={!inCall}
+            className="flex-1 bg-red-500 text-white p-2 rounded disabled:bg-gray-400 flex items-center justify-center gap-2"
+          >
+            <PhoneOff size={18} /> Desligar
+          </button>
+        </div>
       </div>
-      
-      <audio 
-        ref={remoteAudioRef} 
-        autoPlay 
-        playsInline
-        controls={isDev} // Mostrar controles apenas em desenvolvimento
-        style={{ 
-          marginTop: '10px', 
-          width: '100%',
-          display: isDev ? 'block' : 'none' // Ocultar em produção
-        }}
-      />
+      <audio ref={remoteAudioRef} />
     </div>
   );
 };
