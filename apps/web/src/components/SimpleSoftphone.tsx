@@ -42,12 +42,11 @@ export const SimpleSoftphone = () => {
         throw new Error('Configurações do softphone não encontradas no ambiente.');
       }
       
-      // Temporariamente usar WS (não seguro) para teste
-      // TODO: Voltar para WSS quando certificados estiverem configurados
-      const wsUrl = `ws://${host}:8088${websocketPath}`;
-      console.log('Conectando para:', wsUrl);
+      // Forçar o uso de WSS para ambiente de produção seguro
+      const wssUrl = `wss://${host}:8089${websocketPath}`;
+      console.log('Conectando para:', wssUrl);
       
-      const socket = new JsSIP.WebSocketInterface(wsUrl);
+      const socket = new JsSIP.WebSocketInterface(wssUrl);
       
       const configuration = {
         sockets: [socket],
@@ -211,7 +210,7 @@ export const SimpleSoftphone = () => {
       <div className="bg-gray-100 p-3 rounded text-xs">
         <div><strong>Host:</strong> {process.env.NEXT_PUBLIC_ASTERISK_HOST}</div>
         <div><strong>API:</strong> {process.env.NEXT_PUBLIC_API_URL}</div>
-        <div><strong>WS:</strong> ws://{process.env.NEXT_PUBLIC_ASTERISK_HOST}:8088/ws (temporário)</div>
+        <div><strong>WS:</strong> wss://{process.env.NEXT_PUBLIC_ASTERISK_HOST}:8089/ws (seguro)</div>
       </div>
 
       {/* Área de Chamada */}
