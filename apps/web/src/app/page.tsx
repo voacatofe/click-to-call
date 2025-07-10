@@ -3,14 +3,16 @@
 // Force dynamic rendering since we use auth
 export const dynamic = 'force-dynamic'
 
-import Link from 'next/link'
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogOut, User, UserPlus, LogIn, Settings } from 'lucide-react'
 import { Softphone } from '@/components/Softphone';
-import { SoftphoneAdaptive } from '@/components/SoftphoneAdaptive';
+import SoftphoneAdaptive from '@/components/SoftphoneAdaptive';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function Home() {
+const HomePage = () => {
   const { user, signOut, loading } = useAuth()
 
   const handleSignOut = async () => {
@@ -167,3 +169,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default HomePage;
