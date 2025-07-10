@@ -48,12 +48,11 @@ const SoftphoneAdaptive = () => {
       
       const socket = new JsSIP.WebSocketInterface(`wss://${host}${websocketPath}`);
       
-      const configuration: JsSIP.UAConfiguration = {
+      const configuration = {
         sockets: [socket],
         uri: `sip:${agentId}@${realm}`,
         password: password,
         register: true,
-        // 3. Usa os servidores ICE da Twilio
         ice_servers: iceServers,
       };
 
