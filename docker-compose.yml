@@ -1,6 +1,6 @@
 services:
   cert-generator:
-    image: alpine:3.18
+    image: alpQual a ine:3.18
     volumes:
       - asterisk_certs:/etc/asterisk/keys
       - ./asterisk/generate_certs.sh:/usr/local/bin/generate_certs.sh
@@ -20,6 +20,8 @@ services:
     ports:
       # A porta AMI 5038 não precisa ser exposta, pois a comunicação é interna.
       # - "127.0.0.1:5038:5038"
+      # WSS (WebSocket Secure) - ESSENCIAL para WebRTC
+      - "8089:8089"
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
