@@ -15,7 +15,7 @@ const logger = {
 const SoftphoneAdaptive = () => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
-  const [session, setSession] = useState<JsSIP.RTCSession | null>(null);
+  const [session, setSession] = useState<any | null>(null); // Deixando o tipo mais flexível
   const uaRef = useRef<JsSIP.UA | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
