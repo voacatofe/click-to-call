@@ -1,10 +1,8 @@
 [general]
-; CORRIGIDO WSL2: Range reduzido para evitar travamento (200 portas = ~100 chamadas)
 rtpstart=10000
 rtpend=10200
-; ICE support para WebRTC
 icesupport=yes
-stunaddr=stun:stun.l.google.com:19302
+stunaddr=stun.l.google.com:19302
 ; Adiciona o IP do host como um candidato ICE para resolver problemas de NAT em Docker
 ice_host_candidates=${EXTERNAL_IP}
 ; Configurações de segurança adicionais

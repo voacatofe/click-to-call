@@ -1,50 +1,29 @@
 FROM alpine:3.18
 
-LABEL maintainer="Seu Nome <seu-email@example.com>"
-
-# Install Asterisk with SRTP support, openssl, and other dependencies
+# Instala Asterisk, SRTP (para áudio seguro) e outros pacotes essenciais
 RUN apk add --no-cache --update \
     asterisk=18.24.3-r1 \
     asterisk-srtp=18.24.3-r1 \
+    asterisk-sounds-en \
     openssl \
-    tini \
-    # Adiciona os arquivos de som padrão em inglês
-    asterisk-sounds-en
+    tini
 
-# Adiciona uma etapa de build para baixar e extrair os sons
+# Baixa e instala os sons em inglês de alta qualidade (formato wav)
+# Isso garante que arquivos como 'beep' e 'hello-world' estejam disponíveis
 ADD https://downloads.asterisk.org/pub/telephony/sounds/asterisk-core-sounds-en-wav-current.tar.gz /tmp/sounds.tar.gz
 RUN mkdir -p /var/lib/asterisk/sounds/en && \
     tar -xzf /tmp/sounds.tar.gz -C /var/lib/asterisk/sounds/en --strip-components=1 && \
     rm /tmp/sounds.tar.gz
 
-# Generate separate TLS certificate and key files for WSS
-RUN mkdir -p /etc/asterisk/keys && \
-    openssl req -x509 -nodes -newkey rsa:2048 \
-    -keyout /etc/asterisk/keys/asterisk.key \
-    -out /etc/asterisk/keys/asterisk.crt \
-    -days 365 \
-    -subj "/C=BR/ST=SP/L=SaoPaulo/O=ClickToCall/CN=localhost" \
-    -addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1,IP:::1" && \
-    chmod 600 /etc/asterisk/keys/asterisk.key && \
-    chmod 644 /etc/asterisk/keys/asterisk.crt && \
-    chown asterisk:asterisk /etc/asterisk/keys/*
-
-# Copy configuration files
+# Copia as configurações e o script de entrada
 COPY etc/ /etc/asterisk/
-
-# Copy the startup script
 COPY entrypoint.sh /run.sh
 
-# Permissions
+# Ajusta as permissões e torna o script executável
 RUN chmod +x /run.sh && \
     chown -R asterisk:asterisk /etc/asterisk/ && \
     chown asterisk:asterisk /run.sh
 
-# Expose necessary ports (only to localhost in docker-compose)
-EXPOSE 8088 8089 5038
-
-# Define o ponto de entrada para o container
+# Define o ponto de entrada e o comando padrão
 ENTRYPOINT ["/sbin/tini", "--"]
-
-# Comando padrão para iniciar o Asterisk
 CMD ["/run.sh"] 
