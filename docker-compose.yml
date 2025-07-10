@@ -1,19 +1,4 @@
 services:
-  cert-generator:
-    image: alpine:3.18
-    volumes:
-      - asterisk_certs:/etc/asterisk/keys
-      - ./asterisk/certs/generate-dev-certs.sh:/usr/local/bin/generate-dev-certs.sh
-    command: >
-      sh -c "
-        apk add --no-cache openssl &&
-        chmod +x /usr/local/bin/generate-dev-certs.sh &&
-        /usr/local/bin/generate-dev-certs.sh
-      "
-    environment:
-      - ASTERISK_HOST_DOMAIN=${NEXT_PUBLIC_ASTERISK_HOST}
-    restart: "no"
-      
   voip:
     build:
       context: ./asterisk
@@ -30,7 +15,8 @@ services:
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
-      - asterisk_certs:/etc/asterisk/keys
+      # Monta os certificados Let's Encrypt do host (usados pelo Easypanel) em modo de leitura
+      - /etc/letsencrypt:/etc/letsencrypt-host:ro
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000
@@ -38,7 +24,8 @@ services:
       - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD}
       - EXTERNAL_IP=${EXTERNAL_IP}
     depends_on:
-      - cert-generator
+      voip:
+        condition: service_healthy
     networks:
       - clicktocall-network
     healthcheck:
@@ -140,7 +127,6 @@ networks:
 # Volumes Configuration
 # =============================================================================
 volumes:
-  asterisk_certs:
   asterisk_recordings:
     driver: local
   asterisk_logs:
