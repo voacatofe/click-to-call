@@ -8,8 +8,8 @@ type=endpoint
 context=from-internal
 disallow=all
 allow=ulaw,alaw,opus,vp8
-aors=agent-1001-aor
 auth=agent-1001-auth
+aors=agent-1001
 rtp_symmetric=yes
 force_rport=yes
 direct_media=no
@@ -19,7 +19,7 @@ dtls_setup=actpass
 dtls_cert_file=/etc/asterisk/keys/asterisk.pem
 dtls_private_key=/etc/asterisk/keys/asterisk.pem
 
-[agent-1001-aor]
+[agent-1001]
 type=aor
 max_contacts=1
 
@@ -27,4 +27,4 @@ max_contacts=1
 type=auth
 auth_type=userpass
 username=agent-1001
-password=${AGENT_1001_PASSWORD} 
+password=${AGENT_1001_PASSWORD}
