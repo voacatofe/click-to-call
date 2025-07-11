@@ -42,8 +42,8 @@ export const SimpleSoftphone = () => {
         throw new Error('Configurações do softphone não encontradas no ambiente.');
       }
       
-      // Forçar o uso de WSS para ambiente de produção seguro
-      const wssUrl = `wss://${host}:8089${websocketPath}`;
+      // Conecta via WSS na porta padrão (443), que será roteada pelo Traefik
+      const wssUrl = `wss://${host}${websocketPath}`;
       console.log('Conectando para:', wssUrl);
       
       const socket = new JsSIP.WebSocketInterface(wssUrl);
@@ -210,7 +210,7 @@ export const SimpleSoftphone = () => {
       <div className="bg-gray-100 p-3 rounded text-xs">
         <div><strong>Host:</strong> {process.env.NEXT_PUBLIC_ASTERISK_HOST}</div>
         <div><strong>API:</strong> {process.env.NEXT_PUBLIC_API_URL}</div>
-        <div><strong>WS:</strong> wss://{process.env.NEXT_PUBLIC_ASTERISK_HOST}:8089/ws (seguro)</div>
+        <div><strong>WS:</strong> wss://{process.env.NEXT_PUBLIC_ASTERISK_HOST}/ws (via Traefik)</div>
       </div>
 
       {/* Área de Chamada */}

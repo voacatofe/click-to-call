@@ -5,18 +5,14 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      # A porta AMI 5038 não precisa ser exposta, pois a comunicação é interna.
-      # - "127.0.0.1:5038:5038"
-      # WSS (WebSocket Secure) - ESSENCIAL para WebRTC
-      - "8089:8089"
+      # Expõe a porta WS (não segura) para o Traefik
+      - "8088:8088"
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
-      # Monta os certificados Let's Encrypt do host (usados pelo Easypanel) em modo de leitura
-      - /etc/letsencrypt:/etc/letsencrypt-host:ro
     environment:
       - ASTERISK_UID=1000
       - ASTERISK_GID=1000

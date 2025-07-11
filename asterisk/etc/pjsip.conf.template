@@ -3,16 +3,9 @@ type=transport
 protocol=ws
 bind=0.0.0.0:8088
 
-[transport-wss]
-type=transport
-protocol=wss
-bind=0.0.0.0:8089
-cert_file=/etc/letsencrypt-host/live/click-to-call-clicktocal.hvlihi.easypanel.host/fullchain.pem
-priv_key_file=/etc/letsencrypt-host/live/click-to-call-clicktocal.hvlihi.easypanel.host/privkey.pem
-
 [agent-1001]
 type=endpoint
-transport=transport-wss
+transport=transport-ws
 context=from-internal
 disallow=all
 allow=ulaw,alaw,opus,vp8
