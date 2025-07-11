@@ -3,6 +3,7 @@ export interface SignUpFormData {
   password: string
   confirmPassword: string
   fullName: string
+  companyName: string
 }
 
 export interface SignInFormData {

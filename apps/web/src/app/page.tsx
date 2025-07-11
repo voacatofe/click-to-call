@@ -1,11 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { SimpleSoftphone } from '@/components/SimpleSoftphone';
+import { useState, useEffect } from 'react';
+import { Softphone } from '@/components/Softphone';
 import { Button } from '@/components/ui/Button';
 
 export default function Home() {
   const [showSoftphone, setShowSoftphone] = useState(false);
+  const [agentId, setAgentId] = useState<string>('');
+  const [agentPassword, setAgentPassword] = useState<string>();
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAgentCredentials = async () => {
+    try {
+      const response = await fetch('/api/webrtc/credentials');
+      if (response.ok) {
+        const data = await response.json();
+        setAgentId(data.agentId);
+        setAgentPassword(data.password);
+      } else {
+        setError('Falha ao buscar credenciais do WebRTC.');
+        console.error('Failed to fetch credentials:', response.statusText);
+      }
+    } catch (err) {
+      setError('Erro ao conectar com a API para buscar credenciais.');
+      console.error(err);
+    }
+  };
+
+  // Busca as credenciais quando o usuário decide mostrar o softphone
+  useEffect(() => {
+    if (showSoftphone) {
+      fetchAgentCredentials();
+    }
+  }, [showSoftphone]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
@@ -42,7 +69,11 @@ export default function Home() {
         {/* Softphone Area */}
         {showSoftphone && (
           <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl mx-auto">
-            <SimpleSoftphone />
+            {error ? (
+              <div className="text-red-600 text-center">{error}</div>
+            ) : (
+              <Softphone agentId={agentId} agentPassword={agentPassword} />
+            )}
           </div>
         )}
 

@@ -57,12 +57,25 @@ export function useAuth(): AuthState & {
       const supabase = getSupabase()
       if (!supabase.auth) throw new Error('Authentication not available')
 
+      // 1. Criar a empresa e obter o ID
+      const { data: companyData, error: companyError } = await supabase.rpc(
+        'create_company_and_get_id',
+        { company_name: data.companyName } // Assumindo que o nome da empresa virá do formulário
+      )
+
+      if (companyError) throw companyError;
+      if (!companyData) throw new Error('Failed to create company.');
+      
+      const companyId = companyData;
+
+      // 2. Criar o usuário, passando o company_id nos metadados
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
-            full_name: data.fullName
+            full_name: data.fullName,
+            company_id: companyId, // O gatilho no Supabase usará isso
           }
         }
       })

@@ -17,7 +17,11 @@ export const signUpSchema = z.object({
   fullName: z
     .string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(50, 'Nome deve ter no máximo 50 caracteres')
+    .max(50, 'Nome deve ter no máximo 50 caracteres'),
+  companyName: z
+    .string()
+    .min(2, 'Nome da empresa deve ter pelo menos 2 caracteres')
+    .max(100, 'Nome da empresa deve ter no máximo 100 caracteres')
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Senhas não coincidem',
   path: ['confirmPassword']

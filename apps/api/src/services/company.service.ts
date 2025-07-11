@@ -1,4 +1,10 @@
 import { supabase } from '../lib/supabaseClient';
+import { Database } from '../types/supabase';
+
+type Company = Database['public']['Tables']['companies']['Row'];
+type NewCompany = Omit<Company, 'id' | 'created_at' | 'rdcrm_token' | 'rd_station_token'>;
+type CompanyUpdate = Partial<Omit<Company, 'id' | 'created_at' | 'rdcrm_token'>>;
+
 
 export const saveRdTokenForCompany = async (companyId: string, token: string): Promise<void> => {
   const { error } = await supabase
@@ -40,7 +46,7 @@ export const getCompanyById = async (id: string) => {
   return data;
 }
 
-export const createCompany = async (companyData: { name: string; twilio_account_sid?: string; twilio_auth_token?: string }) => {
+export const createCompany = async (companyData: NewCompany) => {
   const { data, error } = await supabase
     .from('companies')
     .insert([companyData])
@@ -55,7 +61,7 @@ export const createCompany = async (companyData: { name: string; twilio_account_
   return data;
 };
 
-export const updateCompany = async (id: string, companyData: { name?: string; twilio_account_sid?: string; twilio_auth_token?: string }) => {
+export const updateCompany = async (id: string, companyData: CompanyUpdate) => {
   const { data, error } = await supabase
     .from('companies')
     .update(companyData)

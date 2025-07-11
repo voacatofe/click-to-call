@@ -89,6 +89,14 @@ export default function RegisterPage() {
           error={errors.fullName?.message}
           autoComplete="name"
         />
+        
+        <Input
+          {...register('companyName')}
+          label="Nome da Empresa"
+          placeholder="Digite o nome da sua empresa"
+          error={errors.companyName?.message}
+          autoComplete="organization"
+        />
 
         <Input
           {...register('email')}

@@ -28,6 +28,3 @@ export const getSupabase = (): SupabaseClient => {
 
   return supabaseInstance
 }
-
-// For backward compatibility
-export const supabase = getSupabase()

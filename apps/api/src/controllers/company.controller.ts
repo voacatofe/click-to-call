@@ -25,7 +25,7 @@ export const getCompanyByIdController = async (req: Request, res: Response): Pro
 };
 
 export const createCompanyController = async (req: Request, res: Response): Promise<void> => {
-  const { name, twilio_account_sid, twilio_auth_token } = req.body;
+  const { name } = req.body;
 
   if (!name) {
     res.status(400).json({ message: 'Company name is required' });
@@ -33,7 +33,7 @@ export const createCompanyController = async (req: Request, res: Response): Prom
   }
 
   try {
-    const newCompany = await createCompany({ name, twilio_account_sid, twilio_auth_token });
+    const newCompany = await createCompany({ name });
     res.status(201).json(newCompany);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create company' });
@@ -42,8 +42,20 @@ export const createCompanyController = async (req: Request, res: Response): Prom
 
 export const updateCompanyController = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
+  const { name, rd_station_token } = req.body;
+
+  // Filtra apenas os campos que podem ser atualizados
+  const updateData: { name?: string; rd_station_token?: string } = {};
+  if (name) updateData.name = name;
+  if (rd_station_token) updateData.rd_station_token = rd_station_token;
+
+  if (Object.keys(updateData).length === 0) {
+    res.status(400).json({ message: 'No valid fields to update provided.' });
+    return;
+  }
+  
   try {
-    const updatedCompany = await updateCompany(id, req.body);
+    const updatedCompany = await updateCompany(id, updateData);
     res.status(200).json(updatedCompany);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update company' });

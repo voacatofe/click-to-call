@@ -4,8 +4,8 @@ import { Request } from 'express';
 export interface AuthenticatedRequest extends Request {
   rdApiToken?: string;
   // Futuramente, podemos adicionar a propriedade user aqui
-  // user?: {
-  //   id: string;
-  //   companyId: string;
-  // }
+  user?: {
+    id: string;
+    companyId: string;
+  }
 } 
