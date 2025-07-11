@@ -6,7 +6,7 @@ bind=0.0.0.0:8088
 [transport-wss]
 type=transport
 protocol=wss
-bind=0.0.0.0:8089
+bind=0.0.0.0
 
 [agent-1001-wss]
 type=endpoint
