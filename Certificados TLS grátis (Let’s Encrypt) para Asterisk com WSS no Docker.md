@@ -64,6 +64,7 @@ tlsbindaddr=0.0.0.0:8089 ; porta do WSS (HTTPS)
 
 tlscertfile=/etc/asterisk/keys/fullchain.pem 
 
+
 tlsprivatekey=/etc/asterisk/keys/privkey.pem 
 
 tlsclientmethod=tlsv1\_2 
