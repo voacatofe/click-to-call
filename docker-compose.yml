@@ -5,14 +5,13 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      # Expõe a porta WS (não segura, para dev) e WSS (segura, para prod)
+      # Porta WS para receber tráfego do EasyPanel (SSL termination)
       - "8088:8088"
-      - "8089:8089"
+      # Removida porta 8089 - EasyPanel faz SSL termination
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
-      # Monta os certificados gerenciados pelo Easypanel (ou gerados localmente para dev)
-      # No Easypanel, configure o Host Path para /etc/letsencrypt/live/SEU_DOMINIO
+      # Certificados para DTLS (mídia) - ainda necessários
       - ./certs:/etc/asterisk/keys
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
@@ -48,7 +47,7 @@ services:
       - ASTERISK_AMI_PORT=5038
       - ASTERISK_AMI_USER=admin
       - ASTERISK_AMI_PASSWORD=${AMI_SECRET}
-      - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD} # Adicionando a senha do agente ao backend
+      - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD}
       - AMI_SECRET=${AMI_SECRET}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
@@ -84,18 +83,22 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST}
+        # EasyPanel SSL Termination - endpoint externo
+        NEXT_PUBLIC_EASYPANEL_HOST: ${NEXT_PUBLIC_EASYPANEL_HOST:-clicktocall-ctc.2w4klq.easypanel.host}
         NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
+        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST}
+      # EasyPanel SSL Termination - endpoint externo
+      - NEXT_PUBLIC_EASYPANEL_HOST=${NEXT_PUBLIC_EASYPANEL_HOST:-clicktocall-ctc.2w4klq.easypanel.host}
       - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
       - NEXT_PUBLIC_ASTERISK_REALM=${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
+      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:

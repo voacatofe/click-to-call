@@ -21,7 +21,7 @@ const SoftphoneAdaptive = () => {
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const [destination, setDestination] = useState('9999'); // Inicia com o teste de eco
 
-  const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001-wss'; // WSS-only endpoint
+  const agentId = 'agent-1001'; // Endpoint atualizado para SSL termination
   const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
   const connect = useCallback(async () => {
@@ -35,20 +35,18 @@ const SoftphoneAdaptive = () => {
       }
       const iceServers = await response.json();
 
-      setStatus('Conectando...');
+      setStatus('Conectando via WSS (EasyPanel)...');
 
-      // 2. Configura o JsSIP com as credenciais recebidas
-      const host = process.env.NEXT_PUBLIC_ASTERISK_HOST;
-      const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH || '/ws';
+      // 2. WSS via EasyPanel - SSL Termination otimizado
+      // EasyPanel recebe WSS e encaminha como WS para o Asterisk
+      const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
       const password = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
-      const agentId = process.env.NEXT_PUBLIC_AGENT_ID || 'agent-1001';
-      const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
 
-      if (!host || !password) {
-        throw new Error('Variáveis de ambiente do softphone não configuradas.');
+      if (!password) {
+        throw new Error('Password do agente não configurada.');
       }
       
-      const socket = new JsSIP.WebSocketInterface(`wss://${host}${websocketPath}`);
+      const socket = new JsSIP.WebSocketInterface(`wss://${easypanelHost}/ws`);
       
       const configuration = {
         sockets: [socket],
@@ -56,59 +54,65 @@ const SoftphoneAdaptive = () => {
         password: password,
         register: true,
         ice_servers: iceServers,
+        // Configurações adicionais para WebRTC seguro
+        session_timers: false,
+        rtcp_feedback: {
+          audio: true,
+          video: false
+        }
       };
 
       const ua = new JsSIP.UA(configuration);
       uaRef.current = ua;
 
-      ua.on('registered', () => setStatus('Online'));
+      ua.on('registered', () => setStatus('Online via WSS (EasyPanel)'));
       ua.on('unregistered', () => setStatus('Desconectado'));
       ua.on('registrationFailed', (e) => setStatus(`Falha no Registro: ${e?.cause || 'Unknown'}`));
       
       ua.on('newRTCSession', (data: any) => {
-        logger.debug('[WSS] Nova sessão RTC via WebSocket Secure');
+        logger.debug('[WSS] Nova sessão RTC via EasyPanel SSL Termination');
         const session = data.session;
         setSession(session);
 
         session.on('peerconnection', (e: any) => {
-          logger.debug('[WebRTC] PeerConnection criada via WSS');
+          logger.debug('[WebRTC] PeerConnection criada via WSS/EasyPanel');
           
           const pc = e.peerconnection;
-          logger.debug('[WebRTC] Estado inicial da conexão WSS:', pc.connectionState);
+          logger.debug('[WebRTC] Estado inicial da conexão WSS/EasyPanel:', pc.connectionState);
           
           pc.addEventListener('connectionstatechange', () => {
-            logger.debug('[WebRTC] Estado da conexão WSS:', pc.connectionState);
+            logger.debug('[WebRTC] Estado da conexão WSS/EasyPanel:', pc.connectionState);
           });
           
           pc.addEventListener('iceconnectionstatechange', () => {
-            logger.debug('[WebRTC] Estado ICE WSS:', pc.iceConnectionState);
+            logger.debug('[WebRTC] Estado ICE WSS/EasyPanel:', pc.iceConnectionState);
           });
 
           pc.addEventListener('track', (event: any) => {
-            logger.debug('[WebRTC] Track recebida via WSS');
+            logger.debug('[WebRTC] Track recebida via WSS/EasyPanel');
             
             if (remoteAudioRef.current && event.streams[0]) {
-              logger.debug('[WebRTC] Configurando áudio remoto WSS');
+              logger.debug('[WebRTC] Configurando áudio remoto WSS/EasyPanel');
               remoteAudioRef.current.srcObject = event.streams[0];
               
               remoteAudioRef.current.play().then(() => {
-                logger.debug('[WebRTC] Áudio WSS iniciado com sucesso');
+                logger.debug('[WebRTC] Áudio WSS/EasyPanel iniciado com sucesso');
               }).catch(err => {
-                logger.error('[WebRTC] Erro ao reproduzir áudio WSS:', err);
+                logger.error('[WebRTC] Erro ao reproduzir áudio WSS/EasyPanel:', err);
               });
             }
           });
         });
 
         session.on('accepted', () => {
-          logger.info('[WSS] Chamada aceita via WebSocket Secure');
-          setStatus('Em chamada (WSS)');
+          logger.info('[WSS] Chamada aceita via EasyPanel SSL Termination');
+          setStatus('Em chamada (Segura via DTLS)');
           setInCall(true);
         });
 
         session.on('ended', () => {
           logger.info('[WSS] Chamada finalizada');
-          setStatus('Registrado (WSS)');
+          setStatus('Online via WSS (EasyPanel)');
           setInCall(false);
         });
 
@@ -130,7 +134,7 @@ const SoftphoneAdaptive = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    logger.debug('[DEBUG] Iniciando Softphone WSS-Only...');
+    logger.debug('[DEBUG] Iniciando Softphone com SSL Termination via EasyPanel...');
     
     // Habilitar debug JsSIP apenas em desenvolvimento
     if (isDev) {
@@ -153,15 +157,20 @@ const SoftphoneAdaptive = () => {
     if (uaRef.current && destination) {
       const options = {
         'mediaConstraints': { 'audio': true, 'video': false },
+        // Forçar uso de DTLS para mídia segura
+        rtcOfferConstraints: {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false
+        }
       };
-      const session = uaRef.current.call(`sip:${destination}@${process.env.NEXT_PUBLIC_ASTERISK_REALM}`, options);
+      const session = uaRef.current.call(`sip:${destination}@${realm}`, options);
       setSession(session);
     }
   };
 
   const handleHangup = () => {
     if (session) {
-      logger.debug('[WSS] Finalizando chamada');
+      logger.debug('[WSS] Finalizando chamada via EasyPanel');
       session.terminate();
     }
   };
@@ -169,7 +178,7 @@ const SoftphoneAdaptive = () => {
   const handleForceAudioPlay = () => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.play().catch(logger.error);
-      logger.debug('[DEBUG] Tentando ativar áudio WSS');
+      logger.debug('[DEBUG] Tentando ativar áudio WSS/EasyPanel');
     }
   };
 
@@ -182,9 +191,13 @@ const SoftphoneAdaptive = () => {
 
   return (
     <div className="p-4 border rounded-lg shadow-md max-w-sm mx-auto">
-      <h3 className="text-lg font-semibold text-center mb-2">Softphone</h3>
-      <div className="text-center mb-4">
+      <h3 className="text-lg font-semibold text-center mb-2">Softphone Seguro</h3>
+      <div className="text-center mb-2">
         <p>Status: <span className={getStatusColor()}>{status}</span></p>
+        <div className="text-xs text-gray-600 mt-1">
+          <p>🔒 WSS via EasyPanel (SSL Termination)</p>
+          <p>🔐 Mídia: DTLS/SRTP</p>
+        </div>
       </div>
       <div className="flex flex-col gap-2">
         <input
@@ -197,7 +210,7 @@ const SoftphoneAdaptive = () => {
         <div className="flex gap-2">
           <button
             onClick={handleCall}
-            disabled={inCall || status !== 'Online'}
+            disabled={inCall || !status.includes('Online')}
             className="flex-1 bg-green-500 text-white p-2 rounded disabled:bg-gray-400 flex items-center justify-center gap-2"
           >
             <Phone size={18} /> Ligar

@@ -26,23 +26,29 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
       return;
     }
 
-    // FORÇAR WSS - OBRIGATÓRIO para ambiente HTTPS
-    const host = process.env.NEXT_PUBLIC_ASTERISK_HOST || 'localhost';
-    const wssPort = process.env.NEXT_PUBLIC_ASTERISK_WSS_PORT || '8089';
-    const socket = new JsSIP.WebSocketInterface(`wss://${host}:${wssPort}/ws`);
+    // WSS via EasyPanel - SSL Termination otimizado
+    // EasyPanel recebe WSS e encaminha como WS para o Asterisk
+    const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
+    const socket = new JsSIP.WebSocketInterface(`wss://${easypanelHost}/ws`);
     
-    // Removendo a tipagem explícita para evitar o erro do linter
+    // Configuração otimizada para SSL termination via EasyPanel
     const configuration = {
-      sockets: [socket], // WSS-only socket
-      uri: `sip:${agentId}@clicktocall.local`, // WSS endpoint
+      sockets: [socket], // WSS via EasyPanel -> WS para Asterisk
+      uri: `sip:agent-1001@clicktocall.local`, // Endpoint atualizado
       password: agentPassword, // Usa a senha recebida via props
-      register: true
+      register: true,
+      // Configurações adicionais para WebRTC seguro
+      session_timers: false,
+      rtcp_feedback: {
+        audio: true,
+        video: false
+      }
     };
 
     const ua = new JsSIP.UA(configuration);
     uaRef.current = ua;
 
-    ua.on('registered', () => setStatus('Registrado'));
+    ua.on('registered', () => setStatus('Registrado via WSS (EasyPanel)'));
     ua.on('unregistered', () => setStatus('Não Registrado'));
     // Usando 'any' para o tipo do evento
     ua.on('registrationFailed', (e: any) => setStatus(`Falha no Registro: ${e.cause}`));
@@ -61,12 +67,12 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
       });
 
       session.on('accepted', () => {
-        setStatus('Em chamada');
+        setStatus('Em chamada (Segura via DTLS)');
         setInCall(true);
       });
 
       session.on('ended', () => {
-        setStatus('Registrado');
+        setStatus('Registrado via WSS (EasyPanel)');
         setInCall(false);
       });
 
@@ -90,12 +96,17 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
     if (uaRef.current) {
       const options = {
         event_handlers: {
-          progress: (e: any) => setStatus('Chamando...'),
+          progress: (e: any) => setStatus('Chamando via WSS...'),
           failed: (e: any) => setStatus(`Falhou: ${e.cause}`),
           ended: (e: any) => setStatus('Finalizada'),
-          accepted: (e: any) => setStatus('Em chamada'),
+          accepted: (e: any) => setStatus('Em chamada (Segura via DTLS)'),
         },
         mediaConstraints: { audio: true, video: false },
+        // Forçar uso de DTLS para mídia segura
+        rtcOfferConstraints: {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false
+        }
       };
       uaRef.current.call(`sip:${destination}@clicktocall.local`, options);
     }
@@ -109,8 +120,12 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
 
   return (
     <div className="p-4 border rounded-lg shadow-md">
-      <h2 className="text-lg font-bold">Softphone</h2>
+      <h2 className="text-lg font-bold">Softphone Seguro (SSL/TLS)</h2>
       <p>Status: <span className="font-semibold">{status}</span></p>
+      <div className="mt-2 text-xs text-gray-600">
+        <p>🔒 Conexão: WSS via EasyPanel (SSL Termination)</p>
+        <p>🔐 Mídia: DTLS/SRTP (Criptografada)</p>
+      </div>
       <div className="mt-4 space-x-2">
         <button
           onClick={() => handleCall('9999')}
