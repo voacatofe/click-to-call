@@ -25,7 +25,7 @@ webrtc=yes
 dtls_verify=fingerprint
 dtls_setup=actpass
 dtls_cert_file=/etc/asterisk/keys/fullchain.pem
-dtls_private_key=/etc/asterisk/keys/privkey.pem
+dtls_priv_key_file=/etc/asterisk/keys/privkey.pem
 
 
 [agent-1001-wss-aor]
