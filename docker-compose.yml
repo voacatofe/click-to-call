@@ -5,11 +5,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      # Expõe a porta WS (não segura) para o Traefik
+      # Expõe a porta WS (não segura, para dev) e WSS (segura, para prod)
       - "8088:8088"
+      - "8089:8089"
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
+      # Monta os certificados gerenciados pelo Easypanel (ou gerados localmente para dev)
+      # No Easypanel, configure o Host Path para /etc/letsencrypt/live/SEU_DOMINIO
+      - ./certs:/etc/asterisk/keys:ro
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
@@ -80,8 +84,6 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_ASTERISK_HOST: ${NEXT_PUBLIC_ASTERISK_HOST}
         NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
-        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
-        NEXT_PUBLIC_AGENT_ID: "agent-1001"
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -91,8 +93,6 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_ASTERISK_HOST=${NEXT_PUBLIC_ASTERISK_HOST}
       - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
-      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
-      - NEXT_PUBLIC_AGENT_ID=agent-1001
       - NEXT_PUBLIC_ASTERISK_REALM=${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}

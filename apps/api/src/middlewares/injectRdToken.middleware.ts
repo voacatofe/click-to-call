@@ -1,15 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { supabase } from '../lib/supabaseClient';
 import jwt from 'jsonwebtoken'; // Usar uma biblioteca JWT real
-
-// Estendendo a interface Request para adicionar nossa propriedade customizada
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    companyId: string;
-  };
-  rdApiToken?: string;
-}
+import { AuthenticatedRequest } from '../types/express'; // Importa a interface centralizada
 
 const getRequiredEnv = (varName: string): string => {
   const value = process.env[varName];

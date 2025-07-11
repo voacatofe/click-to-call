@@ -1,3 +1,5 @@
+import { User } from '@supabase/supabase-js';
+
 export interface SignUpFormData {
   email: string
   password: string
@@ -21,7 +23,7 @@ export interface ResetPasswordFormData {
 }
 
 export interface AuthState {
-  user: any | null
+  user: User | null
   loading: boolean
   error: string | null
 }
