@@ -46,7 +46,7 @@ export const startCallController = async (req: Request, res: Response): Promise<
 
     // 2. Inicia a chamada via Asterisk
     const asteriskRes: any = await asteriskService.originateCall(agentId, to, companyId);
-    
+
     // Se a originaçao no Asterisk for bem sucedida, atualiza nosso registro
     if (asteriskRes && asteriskRes.response === 'Success') {
       await updateCall(initialCall.id, {

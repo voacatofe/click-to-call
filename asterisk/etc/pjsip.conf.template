@@ -1,45 +1,199 @@
-# Configuração otimizada para SSL Termination via EasyPanel
-# O EasyPanel recebe WSS e encaminha como WS para esta porta
+# =============================================================================
+# PJSIP Configuration - Robust SSL/TLS Termination
+# Supports both Development and Production environments
+# Production: EasyPanel SSL Termination (WSS -> WS)
+# Development: Direct WebSocket connection
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# WebSocket Transport (Primary - for EasyPanel SSL Termination)
+# -----------------------------------------------------------------------------
 [transport-ws]
 type=transport
 protocol=ws
 bind=0.0.0.0:8088
-; Configurações de segurança para conexões internas
+; External addressing for NAT traversal
 external_media_address=${EXTERNAL_IP}
 external_signaling_address=${EXTERNAL_IP}
+; Security and performance settings
+local_net=172.16.0.0/12
+local_net=192.168.0.0/16
+local_net=10.0.0.0/8
 
-# Endpoint principal para agentes (via WS, já que EasyPanel faz SSL termination)
+# -----------------------------------------------------------------------------
+# WebSocket Secure Transport (Fallback - for direct SSL if needed)
+# -----------------------------------------------------------------------------
+[transport-wss]
+type=transport
+protocol=wss
+bind=0.0.0.0:8089
+; SSL/TLS Configuration
+method=tlsv1_2
+cipher=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+cert_file=/etc/asterisk/keys/asterisk.crt
+priv_key_file=/etc/asterisk/keys/asterisk.key
+; External addressing
+external_media_address=${EXTERNAL_IP}
+external_signaling_address=${EXTERNAL_IP}
+; Security settings
+verify_server=no
+verify_client=no
+
+# -----------------------------------------------------------------------------
+# Agent Endpoint (Primary - via WebSocket)
+# -----------------------------------------------------------------------------
 [agent-1001]
 type=endpoint
 transport=transport-ws
 context=from-internal
 disallow=all
-allow=ulaw,alaw,opus,vp8
+allow=ulaw,alaw,opus,gsm
 auth=agent-1001-auth
 aors=agent-1001-aor
+; WebRTC and security settings
+webrtc=yes
 rtp_symmetric=yes
 force_rport=yes
 direct_media=no
-webrtc=yes
-
-# Configurações de criptografia DTLS para a mídia (áudio)
-# Ainda necessário para criptografar a mídia RTP
+trust_id_inbound=yes
+trust_id_outbound=yes
+; DTLS Configuration for secure media
 dtls_verify=fingerprint
-dtls_setup=actpass
+dtls_rekey=0
 dtls_cert_file=/etc/asterisk/keys/asterisk.crt
 dtls_priv_key_file=/etc/asterisk/keys/asterisk.key
-; Configurações adicionais de segurança para mídia
+dtls_setup=actpass
+dtls_auto_generate_cert=no
+; Media encryption
 media_encryption=dtls
 ice_support=yes
+; RTP Configuration
+rtp_timeout=60
+rtp_timeout_hold=300
+; Codec preferences for quality
+codec_prefs_incoming_offer=prefer:ulaw,alaw,opus
+codec_prefs_outgoing_offer=prefer:ulaw,alaw,opus
 
+# -----------------------------------------------------------------------------
+# Agent Endpoint (Fallback - via WebSocket Secure)
+# -----------------------------------------------------------------------------
+[agent-1001-wss]
+type=endpoint
+transport=transport-wss
+context=from-internal
+disallow=all
+allow=ulaw,alaw,opus,gsm
+auth=agent-1001-auth
+aors=agent-1001-aor-wss
+; WebRTC and security settings
+webrtc=yes
+rtp_symmetric=yes
+force_rport=yes
+direct_media=no
+trust_id_inbound=yes
+trust_id_outbound=yes
+; DTLS Configuration
+dtls_verify=fingerprint
+dtls_rekey=0
+dtls_cert_file=/etc/asterisk/keys/asterisk.crt
+dtls_priv_key_file=/etc/asterisk/keys/asterisk.key
+dtls_setup=actpass
+dtls_auto_generate_cert=no
+; Media encryption
+media_encryption=dtls
+ice_support=yes
+; RTP Configuration
+rtp_timeout=60
+rtp_timeout_hold=300
+
+# -----------------------------------------------------------------------------
+# Address of Record (AOR) Configurations
+# -----------------------------------------------------------------------------
 [agent-1001-aor]
 type=aor
-max_contacts=1
+max_contacts=3
 remove_existing=yes
+default_expiration=300
+maximum_expiration=600
+minimum_expiration=60
+; Qualify settings for connection health
+qualify_frequency=30
+qualify_timeout=3
 
+[agent-1001-aor-wss]
+type=aor
+max_contacts=3
+remove_existing=yes
+default_expiration=300
+maximum_expiration=600
+minimum_expiration=60
+; Qualify settings
+qualify_frequency=30
+qualify_timeout=3
+
+# -----------------------------------------------------------------------------
+# Authentication Configuration
+# -----------------------------------------------------------------------------
 [agent-1001-auth]
 type=auth
 auth_type=userpass
 username=agent-1001
 password=${AGENT_1001_PASSWORD}
+realm=clicktocall.local
+
+# -----------------------------------------------------------------------------
+# Additional Security Endpoints (for future expansion)
+# -----------------------------------------------------------------------------
+; Template for additional agents
+[agent-template](!)
+type=endpoint
+transport=transport-ws
+context=from-internal
+disallow=all
+allow=ulaw,alaw,opus
+webrtc=yes
+rtp_symmetric=yes
+force_rport=yes
+direct_media=no
+dtls_verify=fingerprint
+dtls_setup=actpass
+dtls_cert_file=/etc/asterisk/keys/asterisk.crt
+dtls_priv_key_file=/etc/asterisk/keys/asterisk.key
+media_encryption=dtls
+ice_support=yes
+
+[aor-template](!)
+type=aor
+max_contacts=3
+remove_existing=yes
+qualify_frequency=30
+
+[auth-template](!)
+type=auth
+auth_type=userpass
+realm=clicktocall.local
+
+# -----------------------------------------------------------------------------
+# Production Trunk Configuration (for future SIP provider integration)
+# -----------------------------------------------------------------------------
+[trunk-production]
+type=endpoint
+transport=transport-ws
+context=outbound-calls
+disallow=all
+allow=ulaw,alaw,gsm
+; trunk-specific settings would go here
+; auth=trunk-auth
+; aors=trunk-aor
+; outbound_auth=trunk-auth
+
+# Note: Uncomment and configure when integrating with SIP provider
+; [trunk-auth]
+; type=auth
+; auth_type=userpass
+; username=your-trunk-username
+; password=your-trunk-password
+
+; [trunk-aor]
+; type=aor
+; contact=sip:your-provider.com

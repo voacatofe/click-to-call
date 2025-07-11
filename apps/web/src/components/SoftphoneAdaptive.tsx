@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as JsSIP from 'jssip';
-import { Phone, PhoneOff, Mic, Ear } from 'lucide-react';
+import { Phone, PhoneOff, Mic, Ear, Wifi, WifiOff, Shield } from 'lucide-react';
 
-// Sistema de log baseado em environment - Next.js compatível
-const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+// Sistema de log robusto baseado em environment
+const isDev = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname.includes('dev'));
+
 const logger = {
   debug: isDev ? console.log : () => {},
   info: console.info,
@@ -13,112 +15,240 @@ const logger = {
   warn: console.warn
 };
 
+// Configurações de ambiente robustas
+const getEnvironmentConfig = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
+  const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
+  
+  return {
+    isProduction,
+    // Configuração para produção (EasyPanel SSL Termination)
+    production: {
+      wsUri: `wss://${easypanelHost}/ws`,
+      sipUri: `sip:agent-1001@${realm}`,
+      displayName: 'Agent (SSL via EasyPanel)'
+    },
+    // Configuração para desenvolvimento (múltiplas opções)
+    development: {
+      primary: {
+        wsUri: `wss://localhost:8089/ws`,
+        sipUri: `sip:agent-1001-wss@${realm}`,
+        displayName: 'Agent (Direct WSS)'
+      },
+      fallback: {
+        wsUri: `ws://localhost:8088/ws`,
+        sipUri: `sip:agent-1001@${realm}`,
+        displayName: 'Agent (Direct WS)'
+      }
+    }
+  };
+};
+
 const SoftphoneAdaptive = () => {
   const [status, setStatus] = useState('Desconectado');
+  const [connectionType, setConnectionType] = useState('');
   const [inCall, setInCall] = useState(false);
-  const [session, setSession] = useState<any | null>(null); // Deixando o tipo mais flexível
+  const [session, setSession] = useState<any | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isSecure, setIsSecure] = useState(false);
+  
   const uaRef = useRef<JsSIP.UA | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const [destination, setDestination] = useState('9999'); // Inicia com o teste de eco
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const [destination, setDestination] = useState('9999');
+  const maxReconnectAttempts = 5;
+  const reconnectDelay = 3000;
 
-  const agentId = 'agent-1001'; // Endpoint atualizado para SSL termination
-  const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
-
-  const connect = useCallback(async () => {
+  // Configuração robusta de conexão
+  const connect = useCallback(async (forceConfig?: any) => {
     try {
-      setStatus('Obtendo config. de rede...');
+      setStatus('Obtendo configuração...');
       
-      // 1. Busca os servidores ICE (STUN/TURN) do nosso backend
-      const response = await fetch('/api/webrtc/ice-servers');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ICE servers: ${response.statusText}`);
+      // Buscar ICE servers
+      let iceServers = [];
+      try {
+        const response = await fetch('/api/webrtc/ice-servers');
+        if (response.ok) {
+          iceServers = await response.json();
+          logger.debug('ICE servers obtidos:', iceServers);
+        }
+      } catch (error) {
+        logger.warn('Falha ao obter ICE servers, usando padrão:', error);
       }
-      const iceServers = await response.json();
 
-      setStatus('Conectando via WSS (EasyPanel)...');
-
-      // 2. WSS via EasyPanel - SSL Termination otimizado
-      // EasyPanel recebe WSS e encaminha como WS para o Asterisk
-      const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
+      const envConfig = getEnvironmentConfig();
       const password = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
 
       if (!password) {
-        throw new Error('Password do agente não configurada.');
+        throw new Error('Senha do agente não configurada');
       }
+
+      let config: { wsUri: string; sipUri: string; displayName: string };
+      let connectionInfo: string;
+
+      if (forceConfig) {
+        config = forceConfig;
+        connectionInfo = forceConfig.displayName;
+      } else if (envConfig.isProduction) {
+        // Produção: Sempre usar EasyPanel SSL Termination
+        config = envConfig.production;
+        connectionInfo = 'Produção (EasyPanel SSL)';
+        setIsSecure(true);
+      } else {
+        // Desenvolvimento: Tentar WSS primeiro, depois WS
+        if (reconnectAttempts < 3) {
+          config = envConfig.development.primary;
+          connectionInfo = 'Dev (Direct WSS)';
+          setIsSecure(true);
+        } else {
+          config = envConfig.development.fallback;
+          connectionInfo = 'Dev (Direct WS)';
+          setIsSecure(false);
+        }
+      }
+
+      setConnectionType(connectionInfo);
+      setStatus(`Conectando via ${connectionInfo}...`);
       
-      const socket = new JsSIP.WebSocketInterface(`wss://${easypanelHost}/ws`);
+      logger.info(`Tentando conectar via: ${config.wsUri}`);
+      
+      const socket = new JsSIP.WebSocketInterface(config.wsUri);
       
       const configuration = {
         sockets: [socket],
-        uri: `sip:${agentId}@${realm}`,
+        uri: config.sipUri,
         password: password,
         register: true,
         ice_servers: iceServers,
-        // Configurações adicionais para WebRTC seguro
         session_timers: false,
         rtcp_feedback: {
           audio: true,
           video: false
-        }
+        },
+        connection_recovery_min_interval: 2,
+        connection_recovery_max_interval: 30
       };
+
+      // Limpar UA anterior se existir
+      if (uaRef.current) {
+        try {
+          if (uaRef.current.isRegistered()) {
+            uaRef.current.unregister();
+          }
+          uaRef.current.stop();
+        } catch (error) {
+          logger.warn('Erro ao limpar UA anterior:', error);
+        }
+      }
 
       const ua = new JsSIP.UA(configuration);
       uaRef.current = ua;
 
-      ua.on('registered', () => setStatus('Online via WSS (EasyPanel)'));
-      ua.on('unregistered', () => setStatus('Desconectado'));
-      ua.on('registrationFailed', (e) => setStatus(`Falha no Registro: ${e?.cause || 'Unknown'}`));
+      // Event handlers robustos
+      ua.on('registered', () => {
+        logger.info(`Registrado com sucesso via ${connectionInfo}`);
+        setStatus(`Online (${connectionInfo})`);
+        setReconnectAttempts(0);
+        
+        // Limpar timeout de reconexão se existir
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+      });
+
+      ua.on('unregistered', () => {
+        setStatus('Desconectado');
+        logger.info('Desregistrado');
+      });
+
+      ua.on('registrationFailed', (e) => {
+        const cause = e?.cause || 'Unknown';
+        logger.error(`Falha no registro via ${connectionInfo}:`, cause);
+        setStatus(`Falha: ${cause}`);
+        
+        // Tentar reconexão automática
+        if (reconnectAttempts < maxReconnectAttempts) {
+          const nextAttempt = reconnectAttempts + 1;
+          setReconnectAttempts(nextAttempt);
+          
+          logger.info(`Tentativa de reconexão ${nextAttempt}/${maxReconnectAttempts} em ${reconnectDelay}ms`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (!envConfig.isProduction && nextAttempt === 3) {
+              // Em desenvolvimento, tentar fallback para WS
+              logger.info('Tentando fallback para WS...');
+              connect();
+            } else {
+              connect();
+            }
+          }, reconnectDelay);
+        } else {
+          setStatus('Falha na conexão (máx. tentativas)');
+          logger.error('Máximo de tentativas de reconexão atingido');
+        }
+      });
+
+      ua.on('disconnected', () => {
+        logger.warn('WebSocket desconectado');
+        setStatus('Desconectado (WebSocket)');
+      });
+
+      ua.on('connected', () => {
+        logger.info('WebSocket conectado');
+      });
       
       ua.on('newRTCSession', (data: any) => {
-        logger.debug('[WSS] Nova sessão RTC via EasyPanel SSL Termination');
+        logger.debug(`Nova sessão RTC via ${connectionInfo}`);
         const session = data.session;
         setSession(session);
 
         session.on('peerconnection', (e: any) => {
-          logger.debug('[WebRTC] PeerConnection criada via WSS/EasyPanel');
+          logger.debug('PeerConnection criada');
           
           const pc = e.peerconnection;
-          logger.debug('[WebRTC] Estado inicial da conexão WSS/EasyPanel:', pc.connectionState);
           
           pc.addEventListener('connectionstatechange', () => {
-            logger.debug('[WebRTC] Estado da conexão WSS/EasyPanel:', pc.connectionState);
+            logger.debug('Estado da conexão:', pc.connectionState);
           });
           
           pc.addEventListener('iceconnectionstatechange', () => {
-            logger.debug('[WebRTC] Estado ICE WSS/EasyPanel:', pc.iceConnectionState);
+            logger.debug('Estado ICE:', pc.iceConnectionState);
           });
 
           pc.addEventListener('track', (event: any) => {
-            logger.debug('[WebRTC] Track recebida via WSS/EasyPanel');
+            logger.debug('Track de áudio recebida');
             
             if (remoteAudioRef.current && event.streams[0]) {
-              logger.debug('[WebRTC] Configurando áudio remoto WSS/EasyPanel');
               remoteAudioRef.current.srcObject = event.streams[0];
               
               remoteAudioRef.current.play().then(() => {
-                logger.debug('[WebRTC] Áudio WSS/EasyPanel iniciado com sucesso');
+                logger.debug('Áudio iniciado com sucesso');
               }).catch(err => {
-                logger.error('[WebRTC] Erro ao reproduzir áudio WSS/EasyPanel:', err);
+                logger.error('Erro ao reproduzir áudio:', err);
               });
             }
           });
         });
 
         session.on('accepted', () => {
-          logger.info('[WSS] Chamada aceita via EasyPanel SSL Termination');
-          setStatus('Em chamada (Segura via DTLS)');
+          logger.info('Chamada aceita');
+          setStatus(`Em chamada (${isSecure ? '🔐 Segura' : '⚠️ Não segura'})`);
           setInCall(true);
         });
 
         session.on('ended', () => {
-          logger.info('[WSS] Chamada finalizada');
-          setStatus('Online via WSS (EasyPanel)');
+          logger.info('Chamada finalizada');
+          setStatus(`Online (${connectionInfo})`);
           setInCall(false);
         });
 
         session.on('failed', (e: any) => {
-          logger.error('[WSS] Chamada falhou:', e.cause || 'Unknown error');
-          setStatus(`Chamada Falhou: ${e.cause || 'Error'}`);
+          const cause = e.cause || 'Unknown';
+          logger.error('Chamada falhou:', cause);
+          setStatus(`Chamada falhou: ${cause}`);
           setInCall(false);
         });
       });
@@ -126,15 +256,26 @@ const SoftphoneAdaptive = () => {
       ua.start();
 
     } catch (error) {
-      console.error('Falha ao configurar ou iniciar o softphone:', error);
-      setStatus(`Erro: ${error instanceof Error ? error.message : 'Desconhecido'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      logger.error('Falha na configuração:', error);
+      setStatus(`Erro: ${errorMsg}`);
+      
+      // Tentar reconexão em caso de erro
+      if (reconnectAttempts < maxReconnectAttempts) {
+        const nextAttempt = reconnectAttempts + 1;
+        setReconnectAttempts(nextAttempt);
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, reconnectDelay);
+      }
     }
-  }, []);
+  }, [reconnectAttempts]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    logger.debug('[DEBUG] Iniciando Softphone com SSL Termination via EasyPanel...');
+    logger.debug('Iniciando Softphone Robusto...');
     
     // Habilitar debug JsSIP apenas em desenvolvimento
     if (isDev) {
@@ -144,11 +285,20 @@ const SoftphoneAdaptive = () => {
     connect();
 
     return () => {
-      if (uaRef.current && uaRef.current.isRegistered()) {
-        uaRef.current.unregister();
+      // Cleanup
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
+      
       if (uaRef.current) {
-        uaRef.current.stop();
+        try {
+          if (uaRef.current.isRegistered()) {
+            uaRef.current.unregister();
+          }
+          uaRef.current.stop();
+        } catch (error) {
+          logger.warn('Erro no cleanup:', error);
+        }
       }
     };
   }, [connect]);
@@ -157,48 +307,64 @@ const SoftphoneAdaptive = () => {
     if (uaRef.current && destination) {
       const options = {
         'mediaConstraints': { 'audio': true, 'video': false },
-        // Forçar uso de DTLS para mídia segura
         rtcOfferConstraints: {
           offerToReceiveAudio: true,
           offerToReceiveVideo: false
         }
       };
+      
+      const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
       const session = uaRef.current.call(`sip:${destination}@${realm}`, options);
       setSession(session);
+      logger.info(`Iniciando chamada para: ${destination}`);
     }
   };
 
   const handleHangup = () => {
     if (session) {
-      logger.debug('[WSS] Finalizando chamada via EasyPanel');
+      logger.debug('Finalizando chamada');
       session.terminate();
     }
   };
 
-  const handleForceAudioPlay = () => {
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.play().catch(logger.error);
-      logger.debug('[DEBUG] Tentando ativar áudio WSS/EasyPanel');
-    }
+  const handleReconnect = () => {
+    setReconnectAttempts(0);
+    connect();
   };
 
   const getStatusColor = () => {
     if (status.includes('Online')) return 'text-green-600';
     if (status.includes('Falha') || status.includes('Erro')) return 'text-red-600';
     if (status.includes('Em chamada')) return 'text-blue-600';
+    if (status.includes('Conectando')) return 'text-yellow-600';
     return 'text-gray-600';
+  };
+
+  const getConnectionIcon = () => {
+    if (status.includes('Online')) {
+      return isSecure ? <Shield className="w-4 h-4 text-green-600" /> : <Wifi className="w-4 h-4 text-yellow-600" />;
+    }
+    return <WifiOff className="w-4 h-4 text-red-600" />;
   };
 
   return (
     <div className="p-4 border rounded-lg shadow-md max-w-sm mx-auto">
-      <h3 className="text-lg font-semibold text-center mb-2">Softphone Seguro</h3>
+      <h3 className="text-lg font-semibold text-center mb-2 flex items-center justify-center gap-2">
+        {getConnectionIcon()}
+        Softphone Robusto
+      </h3>
+      
       <div className="text-center mb-2">
         <p>Status: <span className={getStatusColor()}>{status}</span></p>
         <div className="text-xs text-gray-600 mt-1">
-          <p>🔒 WSS via EasyPanel (SSL Termination)</p>
-          <p>🔐 Mídia: DTLS/SRTP</p>
+          <p>🔗 Conexão: {connectionType}</p>
+          <p>{isSecure ? '🔒 SSL/TLS + DTLS/SRTP' : '⚠️ Não seguro'}</p>
+          {reconnectAttempts > 0 && (
+            <p className="text-yellow-600">🔄 Tentativas: {reconnectAttempts}/{maxReconnectAttempts}</p>
+          )}
         </div>
       </div>
+      
       <div className="flex flex-col gap-2">
         <input
           type="text"
@@ -207,6 +373,7 @@ const SoftphoneAdaptive = () => {
           placeholder="Digite o número"
           className="p-2 border rounded"
         />
+        
         <div className="flex gap-2">
           <button
             onClick={handleCall}
@@ -223,8 +390,18 @@ const SoftphoneAdaptive = () => {
             <PhoneOff size={18} /> Desligar
           </button>
         </div>
+        
+        {(status.includes('Falha') || status.includes('Erro')) && (
+          <button
+            onClick={handleReconnect}
+            className="w-full bg-blue-500 text-white p-2 rounded flex items-center justify-center gap-2"
+          >
+            <Wifi size={18} /> Reconectar
+          </button>
+        )}
       </div>
-      <audio ref={remoteAudioRef} />
+      
+      <audio ref={remoteAudioRef} autoPlay />
     </div>
   );
 };
