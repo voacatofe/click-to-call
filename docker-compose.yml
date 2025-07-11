@@ -13,7 +13,7 @@ services:
     volumes:
       # Monta os certificados gerenciados pelo Easypanel (ou gerados localmente para dev)
       # No Easypanel, configure o Host Path para /etc/letsencrypt/live/SEU_DOMINIO
-      - ./certs:/etc/asterisk/keys:ro
+      - ./certs:/etc/asterisk/keys
       - ./asterisk/etc:/etc/asterisk
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
