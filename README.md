@@ -12,20 +12,27 @@ O projeto é orquestrado com Docker Compose e dividido nos seguintes serviços:
 
 ## Como Executar
 
-### Ambiente de Desenvolvimento
+### Ambiente de Desenvolvimento (Primeira Vez)
 
-Para subir o ambiente de desenvolvimento, utilize o arquivo `docker-compose.yml` padrão.
+Siga estes passos para configurar e rodar o projeto localmente pela primeira vez.
 
-1.  **Pré-requisitos:** Certifique-se de que você tem o Docker e o Docker Compose instalados.
-2.  **Variáveis de Ambiente:** Copie o arquivo `.env.example` para `.env` e preencha as variáveis necessárias para o desenvolvimento local.
-3.  **Certificados (Desenvolvimento):** Para usar WSS localmente, você precisa gerar certificados. Crie uma pasta `certs` na raiz do projeto e coloque seus arquivos `fullchain.pem` e `privkey.pem` nela.
-4.  **Subir os Serviços:** Execute o seguinte comando na raiz do projeto:
-
+1.  **Pré-requisitos:** Certifique-se de que você tem Docker, Docker Compose e OpenSSL instalados.
+2.  **Variáveis de Ambiente:** Copie o arquivo `.env.example` para `.env`.
+    ```bash
+    cp .env.example .env
+    ```
+    *Abra o arquivo `.env` e preencha as variáveis, especialmente as do Supabase.*
+3.  **Certificados TLS (Para WSS Local):** Execute o script para gerar os certificados de desenvolvimento para `localhost`.
+    ```bash
+    sh scripts/generate-dev-certs.sh
+    ```
+    *Este comando criará a pasta `certs/` com os arquivos `privkey.pem` e `fullchain.pem` necessários.*
+4.  **Subir os Serviços:** Execute o Docker Compose para construir as imagens e iniciar todos os containers.
     ```bash
     docker-compose up -d --build
     ```
 
-Isso irá construir as imagens e iniciar todos os containers em modo detached (-d).
+Após a primeira vez, para iniciar e parar o ambiente, você pode usar `docker-compose up -d` e `docker-compose down`.
 
 ### Ambiente de Produção (Easypanel)
 
@@ -35,7 +42,7 @@ Para a implantação em produção, o Easypanel usará o `docker-compose.yml` co
 2.  **Montagem de Certificados:** Na configuração do serviço `voip` no Easypanel, configure o "Volume Mount" para apontar para os certificados gerenciados pelo painel.
     - **Host Path:** `/etc/letsencrypt/live/SEU_DOMINIO` (ou o caminho equivalente do Easypanel)
     - **Container Path:** `/etc/asterisk/keys`
-3.  **Exposição de Portas:** Garanta que as portas definidas no `docker-compose.yml` (especialmente 8089/tcp e 10000-10200/udp) estejam corretamente expostas e mapeadas no Easypanel.
+3.  **Exposição de Portas:** Garanta que as portas definidas no `docker-compose.yml` (especialmente 8089/tcp e 10000-10200/udp) estejam corretamente expostas e mapeadas no painel do Easypanel.
 
 ## Notas sobre a Implantação no Easypanel
 
