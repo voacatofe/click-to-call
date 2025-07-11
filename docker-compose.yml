@@ -48,6 +48,7 @@ services:
       - ASTERISK_AMI_PORT=5038
       - ASTERISK_AMI_USER=admin
       - ASTERISK_AMI_PASSWORD=${AMI_SECRET}
+      - AGENT_1001_PASSWORD=${AGENT_1001_PASSWORD} # Adicionando a senha do agente ao backend
       - AMI_SECRET=${AMI_SECRET}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
