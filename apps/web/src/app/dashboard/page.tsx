@@ -6,7 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
-import { Settings, Save, Eye, EyeOff, LogOut, User } from 'lucide-react'
+import { Settings, Save, Eye, EyeOff, LogOut, User, Phone } from 'lucide-react'
+import { Softphone } from '@/components/Softphone'
 
 // Force dynamic rendering since we use auth
 export const dynamic = 'force-dynamic'
@@ -20,6 +21,8 @@ export default function DashboardPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasExistingToken, setHasExistingToken] = useState(false)
+  const [agentId, setAgentId] = useState<string>('')
+  const [agentPassword, setAgentPassword] = useState<string>()
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -32,8 +35,26 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       checkExistingToken()
+      fetchAgentCredentials()
     }
   }, [user])
+
+  const fetchAgentCredentials = async () => {
+    try {
+      // Este endpoint precisará ser criado na nossa API
+      const response = await fetch('/api/webrtc/credentials')
+      if (response.ok) {
+        const data = await response.json()
+        setAgentId(data.agentId)
+        setAgentPassword(data.password)
+      } else {
+        setError('Falha ao buscar credenciais do WebRTC.')
+      }
+    } catch (err) {
+      setError('Erro ao conectar com a API para buscar credenciais.')
+      console.error(err)
+    }
+  }
 
   const checkExistingToken = async () => {
     try {
@@ -242,6 +263,28 @@ export default function DashboardPage() {
                     <li>Clique em "Salvar Token"</li>
                   </ol>
                 </div>
+              </div>
+            </div>
+
+            {/* Softphone Card */}
+            <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Phone className="h-6 w-6 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Telefone Virtual
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Realize e receba chamadas diretamente do navegador
+                    </p>
+                  </div>
+                </div>
+                <Softphone agentId={agentId} agentPassword={agentPassword} />
               </div>
             </div>
 

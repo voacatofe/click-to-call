@@ -3,7 +3,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as JsSIP from 'jssip';
 
-export const Softphone = () => {
+// Define as propriedades que o componente Softphone espera receber
+interface SoftphoneProps {
+  agentId: string;
+  agentPassword?: string;
+}
+
+export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) => {
   const [status, setStatus] = useState('Desconectado');
   const [inCall, setInCall] = useState(false);
   const uaRef = useRef<JsSIP.UA | null>(null);
@@ -11,10 +17,12 @@ export const Softphone = () => {
   const sessionRef = useRef<any>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
-  const agentId = 'agent-1001-wss'; // WSS-only para segurança
+  // A agentId agora vem das props
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    // Se não tivermos a senha, não podemos iniciar o softphone
+    if (typeof window === 'undefined' || !agentPassword) {
+      setStatus('Aguardando credenciais...');
       return;
     }
 
@@ -27,7 +35,7 @@ export const Softphone = () => {
     const configuration = {
       sockets: [socket], // WSS-only socket
       uri: `sip:${agentId}@clicktocall.local`, // WSS endpoint
-      password: process.env.NEXT_PUBLIC_AGENT_PASSWORD || 'changeme',
+      password: agentPassword, // Usa a senha recebida via props
       register: true
     };
 
@@ -76,7 +84,7 @@ export const Softphone = () => {
       }
       ua.stop();
     };
-  }, []);
+  }, [agentId, agentPassword]); // Adicionado agentId e agentPassword às dependências
 
   const handleCall = (destination: string) => {
     if (uaRef.current) {

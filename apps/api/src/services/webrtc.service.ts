@@ -9,12 +9,13 @@ const getRequiredEnv = (varName: string): string => {
   return value;
 };
 
-const accountSid = getRequiredEnv('TWILIO_ACCOUNT_SID');
-const authToken = getRequiredEnv('TWILIO_AUTH_TOKEN');
-
-const client = twilio(accountSid, authToken);
+// --- Funções para ICE Servers (Twilio) ---
 
 export const getIceServers = async () => {
+  const accountSid = getRequiredEnv('TWILIO_ACCOUNT_SID');
+  const authToken = getRequiredEnv('TWILIO_AUTH_TOKEN');
+  const client = twilio(accountSid, authToken);
+
   try {
     const token = await client.tokens.create({ ttl: 3600 }); // Token válido por 1 hora
     return token.iceServers;
@@ -22,4 +23,16 @@ export const getIceServers = async () => {
     console.error('Error fetching ICE servers from Twilio:', error);
     throw new Error('Failed to fetch ICE servers.');
   }
+};
+
+// --- Funções para Credenciais do Agente (Asterisk) ---
+
+export const getAgentCredentials = () => {
+  const agentId = 'agent-1001-wss'; // Ramal fixo por enquanto
+  const password = getRequiredEnv('AGENT_1001_PASSWORD');
+  
+  // No futuro, isso pode ser expandido para buscar credenciais dinâmicas do banco de dados
+  // com base no usuário autenticado.
+
+  return { agentId, password };
 }; 
