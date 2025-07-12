@@ -115,13 +115,9 @@ const SoftphoneAdaptive = () => {
       logger.info(`Tentando conectar via: ${config.wsUri}`);
       
       const socket = new JsSIP.WebSocketInterface(config.wsUri);
-
-      // --- Tratamento de Erro de Conexão WebSocket ---
-      socket.on('error', (error) => {
-        logger.error('Erro de Conexão WebSocket:', error);
-        setStatus(`Falha WebSocket: Verifique o console`);
-      });
-      // --- Fim do Tratamento de Erro ---
+      
+      // A linha que causava o erro de build foi removida.
+      // O tratamento de erro robusto já está nos eventos 'registrationFailed' e 'disconnected' da UA.
       
       const configuration = {
         sockets: [socket],
@@ -195,19 +191,17 @@ const SoftphoneAdaptive = () => {
       });
 
       ua.on('disconnected', () => {
-        logger.warn('WebSocket desconectado.');
+        logger.warn('WebSocket desconectado. Tentando reconectar...');
         setStatus('Desconectado (WebSocket)');
         
-        // Inicia a lógica de reconexão se não for uma desconexão intencional
-        if (!ua.isClosed()) {
-          if (reconnectAttempts < maxReconnectAttempts) {
-            const nextAttempt = reconnectAttempts + 1;
-            setReconnectAttempts(nextAttempt);
-            
-            reconnectTimeoutRef.current = setTimeout(() => {
-              connect();
-            }, reconnectDelay);
-          }
+        // Inicia a lógica de reconexão
+        if (reconnectAttempts < maxReconnectAttempts) {
+          const nextAttempt = reconnectAttempts + 1;
+          setReconnectAttempts(nextAttempt);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect();
+          }, reconnectDelay);
         }
       });
 
