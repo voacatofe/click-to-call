@@ -115,6 +115,13 @@ const SoftphoneAdaptive = () => {
       logger.info(`Tentando conectar via: ${config.wsUri}`);
       
       const socket = new JsSIP.WebSocketInterface(config.wsUri);
+
+      // --- Tratamento de Erro de Conexão WebSocket ---
+      socket.on('error', (error) => {
+        logger.error('Erro de Conexão WebSocket:', error);
+        setStatus(`Falha WebSocket: Verifique o console`);
+      });
+      // --- Fim do Tratamento de Erro ---
       
       const configuration = {
         sockets: [socket],
@@ -147,53 +154,61 @@ const SoftphoneAdaptive = () => {
       uaRef.current = ua;
 
       // Event handlers robustos
-      ua.on('registered', () => {
+      ua.on('registered', (e) => {
         logger.info(`Registrado com sucesso via ${connectionInfo}`);
         setStatus(`Online (${connectionInfo})`);
         setReconnectAttempts(0);
         
-        // Limpar timeout de reconexão se existir
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
       });
 
-      ua.on('unregistered', () => {
+      ua.on('unregistered', (e) => {
         setStatus('Desconectado');
-        logger.info('Desregistrado');
+        logger.info(`Desregistrado. Causa: ${e.cause}`);
       });
 
       ua.on('registrationFailed', (e) => {
-        const cause = e?.cause || 'Unknown';
+        const cause = e.cause || 'Unknown';
         logger.error(`Falha no registro via ${connectionInfo}:`, cause);
-        setStatus(`Falha: ${cause}`);
+        // Verifica se o erro é de conexão WebSocket
+        if (cause === JsSIP.C.causes.CONNECTION_ERROR) {
+          setStatus(`Falha WebSocket: Verifique o proxy e a rede.`);
+        } else {
+          setStatus(`Falha no Registro: ${cause}`);
+        }
         
-        // Tentar reconexão automática
+        // Lógica de reconexão
         if (reconnectAttempts < maxReconnectAttempts) {
           const nextAttempt = reconnectAttempts + 1;
           setReconnectAttempts(nextAttempt);
           
-          logger.info(`Tentativa de reconexão ${nextAttempt}/${maxReconnectAttempts} em ${reconnectDelay}ms`);
-          
           reconnectTimeoutRef.current = setTimeout(() => {
-            if (!envConfig.isProduction && nextAttempt === 3) {
-              // Em desenvolvimento, tentar fallback para WS
-              logger.info('Tentando fallback para WS...');
-              connect();
-            } else {
-              connect();
-            }
-          }, reconnectDelay);
+            connect();
+          }, reconnectDelay * nextAttempt); // Aumenta o delay a cada tentativa
         } else {
           setStatus('Falha na conexão (máx. tentativas)');
-          logger.error('Máximo de tentativas de reconexão atingido');
+          logger.error('Máximo de tentativas de reconexão atingido.');
         }
       });
 
       ua.on('disconnected', () => {
-        logger.warn('WebSocket desconectado');
+        logger.warn('WebSocket desconectado.');
         setStatus('Desconectado (WebSocket)');
+        
+        // Inicia a lógica de reconexão se não for uma desconexão intencional
+        if (!ua.isClosed()) {
+          if (reconnectAttempts < maxReconnectAttempts) {
+            const nextAttempt = reconnectAttempts + 1;
+            setReconnectAttempts(nextAttempt);
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connect();
+            }, reconnectDelay);
+          }
+        }
       });
 
       ua.on('connected', () => {

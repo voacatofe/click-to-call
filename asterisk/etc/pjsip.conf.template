@@ -19,6 +19,10 @@ external_signaling_address=${EXTERNAL_IP}
 local_net=172.16.0.0/12
 local_net=192.168.0.0/16
 local_net=10.0.0.0/8
+; Keep-alive para proxies e NAT
+keep_alive_interval=90
+; Aumentar timeouts para conexões via proxy
+connection_timeout=180
 
 # -----------------------------------------------------------------------------
 # WebSocket Secure Transport (Fallback - for direct SSL if needed)
