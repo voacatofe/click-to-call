@@ -2,14 +2,14 @@ FROM alpine:3.18
 
 ARG ASTERISK_VERSION=18.24.3-r1
 
-# Instala Asterisk, SRTP e dependências
+# Instala Asterisk, SRTP e dependências, usando su-exec em vez de gosu
 RUN apk add --no-cache --update \
     asterisk=${ASTERISK_VERSION} \
     asterisk-srtp=${ASTERISK_VERSION} \
     asterisk-sounds-en \
     openssl \
     tini \
-    gosu
+    su-exec
 
 # Instala sons em inglês
 ADD https://downloads.asterisk.org/pub/telephony/sounds/asterisk-core-sounds-en-wav-current.tar.gz /tmp/sounds.tar.gz

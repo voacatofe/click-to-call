@@ -18,7 +18,7 @@ chown -R asterisk:asterisk /etc/asterisk /var/lib/asterisk /var/log/asterisk /va
 # Adicionando o '-f' para rodar em primeiro plano e o '-c' para logar no console
 # Isto é crucial para que os logs sejam capturados pelo Docker/EasyPanel
 if [ "$1" = "asterisk" ]; then
-  exec gosu asterisk tini -s -- asterisk -f -c -vvvv
+  exec su-exec asterisk tini -s -- asterisk -f -c -vvvv
 fi
 
 exec "$@" 
