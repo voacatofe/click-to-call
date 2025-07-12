@@ -1,42 +1,43 @@
-# 1. Dependências
+# =============================================================================
+# Dockerfile para a API Backend - Robusto e Otimizado
+# =============================================================================
+
+# --- 1. Estágio de Dependências ---
 FROM node:18-alpine AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
-RUN npm i -g pnpm && pnpm install --filter api --prod
+# Usando --frozen-lockfile para garantir builds consistentes
+RUN npm i -g pnpm && pnpm install --filter api --prod --frozen-lockfile
 
-# 2. Builder
+# --- 2. Estágio de Build ---
 FROM node:18-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/ . 
+COPY --from=deps /app/ .
 COPY turbo.json turbo.json
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/api/ ./apps/api/
-RUN npm i -g pnpm && pnpm install && pnpm turbo run build --filter=api
+# Otimizando a instalação e o build
+RUN npm i -g pnpm && pnpm install --frozen-lockfile
+RUN pnpm turbo run build --filter=api
 
-# 3. Runner
+# --- 3. Estágio de Produção ---
 FROM node:18-alpine AS runner
 WORKDIR /app
 
-# Instalar curl para health check
+# Instala apenas as dependências de produção
+COPY --from=deps /app/ .
+RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile
+
+# Copia os artefatos do build
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY package.json .
+COPY apps/api/package.json ./apps/api/
+
+# Instala o curl para o healthcheck
 RUN apk add --no-cache curl
 
-ENV NODE_ENV=production
-ENV DOCKER_ENV=true
-
-# Copia todos os manifestos do monorepo
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-COPY turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-
-# Instala TODAS as dependências de produção do monorepo
-RUN npm i -g pnpm && pnpm install --prod
-
-# Copia o código compilado da API
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-
+# Expõe a porta e define o comando de inicialização
 EXPOSE 3001
-
 CMD ["node", "apps/api/dist/index.js"] 
