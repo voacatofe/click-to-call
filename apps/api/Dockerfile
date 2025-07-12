@@ -2,35 +2,34 @@
 # Dockerfile para a API Backend - Robusto e Otimizado
 # =============================================================================
 
-# --- 1. Estágio de Dependências ---
-FROM node:18-alpine AS deps
+# --- 1. Estágio Base (Instala pnpm e turbo) ---
+FROM node:18-alpine AS base
+RUN npm i -g pnpm turbo
+
+# --- 2. Estágio de Dependências (Instala TUDO, incluindo dev) ---
+FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
-# Usando --frozen-lockfile para garantir builds consistentes
-RUN npm i -g pnpm && pnpm install --filter api --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-# --- 2. Estágio de Build ---
-FROM node:18-alpine AS builder
+# --- 3. Estágio de Build (Compila o código) ---
+FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/ .
 COPY turbo.json turbo.json
-COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/api/ ./apps/api/
-# Otimizando a instalação e o build
-# Inclui devDependencies para ter acesso ao 'tsc' (TypeScript Compiler)
-RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=api
 
-# --- 3. Estágio de Produção ---
-FROM node:18-alpine AS runner
+# --- 4. Estágio de Produção (Imagem final e limpa) ---
+FROM base AS runner
 WORKDIR /app
 
-# Instala SOMENTE as dependências de produção na imagem final
+# Copia apenas os arquivos necessários da instalação completa
 COPY --from=deps /app/ .
-# Note que aqui usamos --prod, o que é correto para a imagem final
-RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile
+# Remove as dependências de desenvolvimento, deixando só as de produção
+RUN pnpm prune --prod
 
 # Copia os artefatos do build
 COPY --from=builder /app/apps/api/dist ./apps/api/dist

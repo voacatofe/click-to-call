@@ -2,17 +2,20 @@
 # Dockerfile para o Frontend (Web) - Robusto e Otimizado
 # =============================================================================
 
-# --- 1. Estágio de Dependências ---
-FROM node:18-alpine AS deps
+# --- 1. Estágio Base (Instala pnpm e turbo) ---
+FROM node:18-alpine AS base
+RUN npm i -g pnpm turbo
+
+# --- 2. Estágio de Dependências (Instala TUDO, incluindo dev) ---
+FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
-# Usando --frozen-lockfile para garantir builds consistentes
-RUN npm i -g pnpm && pnpm install --filter web --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-# --- 2. Estágio de Build ---
-FROM node:18-alpine AS builder
+# --- 3. Estágio de Build (Compila o código) ---
+FROM base AS builder
 # Argumentos de Build para variáveis NEXT_PUBLIC
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_AGENT_PASSWORD
@@ -25,24 +28,20 @@ ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 WORKDIR /app
 COPY --from=deps /app/ .
 COPY turbo.json turbo.json
-COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/web/ ./apps/web/
-# Otimizando a instalação e o build
-# Inclui devDependencies para as ferramentas de build do Next.js
-RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=web
 
-# --- 3. Estágio de Produção ---
-FROM node:18-alpine AS runner
+# --- 4. Estágio de Produção (Imagem final e limpa) ---
+FROM base AS runner
 WORKDIR /app
 
 # Cria usuários e grupos para segurança
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copia SOMENTE as dependências de produção
+# Copia os arquivos da instalação completa e remove devDependencies
 COPY --from=deps /app/ .
-RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile
+RUN pnpm prune --prod
 
 # Copia os artefatos do build
 COPY --from=builder /app/apps/web/public ./apps/web/public
