@@ -1,16 +1,21 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Desabilitando o modo estrito do React para evitar a dupla renderização em desenvolvimento,
+  // que pode causar problemas com conexões WebSocket e UA do JsSIP.
+  reactStrictMode: false,
+  
+  // Otimização de build para reduzir o tempo de compilação
+  swcMinify: true,
 
-const nextConfig: NextConfig = {
-  // Configuração padrão do Next.js
-};
-
-module.exports = {
-  ...nextConfig,
+  // Configuração do ESLint alinhada com as novas versões do Next.js
   eslint: {
-    // Desabilitar o cache do ESLint, que pode causar problemas
-    cache: false, 
-    // Corrigir opções inválidas
-    // As opções 'useEslintrc' e 'extensions' foram removidas nas versões recentes
+    // A opção 'cache' foi movida para fora do eslint a partir do Next.js 13
+    // A opção 'useEslintrc' foi descontinuada
+    // 'extensions' agora é gerenciado internamente pelo Next.js
+    
+    // Ignorar durante o build, pois o linting já é feito em outras etapas do CI/CD
+    ignoreDuringBuilds: true,
   },
-  // Manter outras configurações do Next.js se existirem
 };
+
+export default nextConfig;

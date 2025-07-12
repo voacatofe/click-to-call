@@ -82,23 +82,19 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        # EasyPanel SSL Termination - endpoint externo
-        NEXT_PUBLIC_EASYPANEL_HOST: ${NEXT_PUBLIC_EASYPANEL_HOST:-clicktocall-ctc.2w4klq.easypanel.host}
-        NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
-        NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
+        # Passa a senha do agente como argumento de build para o Next.js
+        # Isso garante que a variável esteja disponível durante o build
         NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
     environment:
+      # Garante que a variável também esteja disponível em tempo de execução
+      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
+      # Outras variáveis de ambiente do frontend...
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      # EasyPanel SSL Termination - endpoint externo
       - NEXT_PUBLIC_EASYPANEL_HOST=${NEXT_PUBLIC_EASYPANEL_HOST:-clicktocall-ctc.2w4klq.easypanel.host}
       - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH:-/ws}
       - NEXT_PUBLIC_ASTERISK_REALM=${NEXT_PUBLIC_ASTERISK_REALM:-clicktocall.local}
-      - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:

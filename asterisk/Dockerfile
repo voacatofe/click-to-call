@@ -1,31 +1,32 @@
 FROM alpine:3.18
 
-# Instala Asterisk, SRTP (para áudio seguro) e outros pacotes essenciais
+ARG ASTERISK_VERSION=18.24.3-r1
+
+# Instala Asterisk, SRTP e dependências
 RUN apk add --no-cache --update \
-    asterisk=18.24.3-r1 \
-    asterisk-srtp=18.24.3-r1 \
+    asterisk=${ASTERISK_VERSION} \
+    asterisk-srtp=${ASTERISK_VERSION} \
     asterisk-sounds-en \
     openssl \
-    tini
+    tini \
+    gosu
 
-# Baixa e instala os sons em inglês de alta qualidade (formato wav)
-# Isso garante que arquivos como 'beep' e 'hello-world' estejam disponíveis
+# Instala sons em inglês
 ADD https://downloads.asterisk.org/pub/telephony/sounds/asterisk-core-sounds-en-wav-current.tar.gz /tmp/sounds.tar.gz
 RUN mkdir -p /var/lib/asterisk/sounds/en && \
     tar -xzf /tmp/sounds.tar.gz -C /var/lib/asterisk/sounds/en --strip-components=1 && \
     rm /tmp/sounds.tar.gz
 
-# Copia as configurações e o script de entrada
+# Copia configurações
 COPY etc/ /etc/asterisk/
+
+# Copia entrypoint e dá permissões
 COPY entrypoint.sh /run.sh
+RUN chmod +x /run.sh
 
-# Ajusta as permissões e torna o script executável
-# Garante que o usuário asterisk seja dono de todos os arquivos de som e configuração
-RUN chmod +x /run.sh && \
-    chown -R asterisk:asterisk /etc/asterisk/ && \
-    chown -R asterisk:asterisk /var/lib/asterisk/sounds/ && \
-    chown asterisk:asterisk /run.sh
+# Expõe as portas necessárias
+EXPOSE 8088 8089 5038
+EXPOSE 10000-10200/udp
 
-# Define o ponto de entrada e o comando padrão
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/run.sh"] 
+ENTRYPOINT ["/run.sh"]
+CMD ["asterisk"] 
