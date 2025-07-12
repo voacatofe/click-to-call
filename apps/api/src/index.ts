@@ -5,7 +5,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // A configuração de CORS foi removida, pois o EasyPanel gerencia o roteamento
-// no mesmo domínio, tornando o CORS explícito desnecessário e potencialmente problemático.
+// no mesmo domínio, tornando o CORS explícito desnecessário.
 
 app.use(express.json()); // Adiciona o middleware para parsear o corpo da requisição JSON
 

@@ -29,12 +29,13 @@ const HealthCheck = ({ title, url, testName }: { title: string; url: string; tes
   const runTest = async () => {
     setStatus({ ok: false, message: 'Testando...' });
     try {
+      // Usa a URL relativa diretamente no fetch
       const response = await fetch(url);
       const data = await response.json();
       if (response.ok) {
         setStatus({ ok: true, message: `${testName} OK - ${JSON.stringify(data)}` });
       } else {
-        throw new Error(data.error || 'Erro desconhecido');
+        throw new Error(data.error || `Erro ${response.status}`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -64,8 +65,7 @@ const HealthCheck = ({ title, url, testName }: { title: string; url: string; tes
 
 
 const DebugPage = () => {
-  // Lê as variáveis de ambiente corretas do Next.js
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  // Remove a dependência da variável de ambiente NEXT_PUBLIC_API_URL
   const agentPassword = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
   const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST;
   const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH;
@@ -84,7 +84,7 @@ const DebugPage = () => {
           <div className="p-4 bg-white border rounded-lg shadow-sm">
             <h3 className="mb-3 text-lg font-semibold text-gray-700">🌏 Variáveis de Ambiente (Frontend)</h3>
             <div className="space-y-2">
-              <EnvVarStatus name="NEXT_PUBLIC_API_URL" value={apiUrl} />
+              {/* Removida a exibição de NEXT_PUBLIC_API_URL pois agora é implícita */}
               <EnvVarStatus name="NEXT_PUBLIC_AGENT_PASSWORD" value={agentPassword} />
               <EnvVarStatus name="NEXT_PUBLIC_EASYPANEL_HOST" value={easypanelHost} />
               <EnvVarStatus name="NEXT_PUBLIC_WEBSOCKET_PATH" value={websocketPath} />
@@ -96,12 +96,12 @@ const DebugPage = () => {
           <div className="space-y-6">
             <HealthCheck 
               title="📡 Status da API"
-              url={`${apiUrl}/api/health`}
+              url="/api/health" // URL relativa
               testName="API"
             />
             <HealthCheck
               title="🧊 ICE Servers (TURN/STUN)"
-              url={`${apiUrl}/api/webrtc/ice-servers`}
+              url="/api/webrtc/ice-servers" // URL relativa
               testName="ICE"
             />
           </div>

@@ -82,9 +82,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Passa TODAS as variáveis NEXT_PUBLIC como argumentos de build
-        # para que sejam "embutidas" nos arquivos estáticos pelo Next.js
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        # A URL da API agora é relativa, então não precisamos mais passá-la aqui.
+        # As outras variáveis ainda são necessárias para o softphone e outras funcionalidades.
         NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
         NEXT_PUBLIC_EASYPANEL_HOST: ${NEXT_PUBLIC_EASYPANEL_HOST}
         NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH}
@@ -96,7 +95,7 @@ services:
     # pois os valores já foram embutidos no build, mas é uma boa prática mantê-las.
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      # NEXT_PUBLIC_API_URL removida
       - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
       - NEXT_PUBLIC_EASYPANEL_HOST=${NEXT_PUBLIC_EASYPANEL_HOST}
       - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH}
