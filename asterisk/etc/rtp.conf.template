@@ -3,7 +3,7 @@ rtpstart=10000
 rtpend=10200
 icesupport=yes
 
-# Configuração de NAT para WebRTC
+; Configuração de NAT para WebRTC
 externaddr=${EXTERNAL_IP}
 localnet=172.16.0.0/12  ; Rede interna do Docker
 localnet=192.168.0.0/16 ; Redes locais comuns

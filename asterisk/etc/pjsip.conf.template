@@ -19,8 +19,6 @@ external_signaling_address=${EXTERNAL_IP}
 local_net=172.16.0.0/12
 local_net=192.168.0.0/16
 local_net=10.0.0.0/8
-; Keep-alive para proxies e NAT
-keep_alive_interval=90
 ; Aumentar timeouts para conexões via proxy
 connection_timeout=180
 
@@ -33,7 +31,7 @@ protocol=wss
 bind=0.0.0.0:8089
 ; SSL/TLS Configuration
 method=tlsv1_2
-cipher=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+; A linha 'cipher' foi removida para permitir que o Asterisk negocie a melhor cifra disponível.
 cert_file=/etc/asterisk/keys/asterisk.crt
 priv_key_file=/etc/asterisk/keys/asterisk.key
 ; External addressing
