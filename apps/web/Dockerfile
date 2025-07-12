@@ -53,4 +53,5 @@ USER nextjs
 
 # Expõe a porta e define o comando de inicialização
 EXPOSE 3000
-CMD ["next", "start"] 
+# Usa 'pnpm --filter web start' para garantir que o executável 'next' seja encontrado no contexto do workspace
+CMD ["pnpm", "--filter", "web", "start"] 
