@@ -19,6 +19,7 @@ COPY turbo.json turbo.json
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/api/ ./apps/api/
 # Otimizando a instalação e o build
+# Inclui devDependencies para ter acesso ao 'tsc' (TypeScript Compiler)
 RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=api
 
@@ -26,8 +27,9 @@ RUN pnpm turbo run build --filter=api
 FROM node:18-alpine AS runner
 WORKDIR /app
 
-# Instala apenas as dependências de produção
+# Instala SOMENTE as dependências de produção na imagem final
 COPY --from=deps /app/ .
+# Note que aqui usamos --prod, o que é correto para a imagem final
 RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile
 
 # Copia os artefatos do build

@@ -28,6 +28,7 @@ COPY turbo.json turbo.json
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/web/ ./apps/web/
 # Otimizando a instalação e o build
+# Inclui devDependencies para as ferramentas de build do Next.js
 RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=web
 
@@ -39,7 +40,7 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copia dependências de produção
+# Copia SOMENTE as dependências de produção
 COPY --from=deps /app/ .
 RUN npm i -g pnpm && pnpm install --prod --frozen-lockfile
 
