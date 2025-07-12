@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as JsSIP from 'jssip';
 import { Phone, PhoneOff, Mic, Ear, Wifi, WifiOff, Shield } from 'lucide-react';
+import { getApiUrl } from '@/lib/api'; // Importa a função para construir URLs da API
 
 // Sistema de log robusto baseado em environment
-const isDev = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname.includes('dev'));
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
 const logger = {
   debug: isDev ? console.log : () => {},
@@ -17,29 +17,32 @@ const logger = {
 
 // Configurações de ambiente robustas
 const getEnvironmentConfig = () => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  // Detecta se estamos em desenvolvimento (localhost)
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
   const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM || 'clicktocall.local';
   
   return {
-    isProduction,
+    isProduction: !isLocalhost,
     // Configuração para produção (EasyPanel SSL Termination)
+    // EasyPanel recebe WSS e encaminha WS internamente para o Asterisk
     production: {
       wsUri: `wss://${easypanelHost}/ws`,
       sipUri: `sip:agent-1001@${realm}`,
-      displayName: 'Agent (SSL via EasyPanel)'
+      displayName: 'Agent (EasyPanel SSL Termination)'
     },
-    // Configuração para desenvolvimento (múltiplas opções)
+    // Configuração para desenvolvimento (WS direto, sem proxy)
+    // Em desenvolvimento, usamos WS direto para o Asterisk na porta 8088
     development: {
       primary: {
-        wsUri: `wss://localhost:8089/ws`,
-        sipUri: `sip:agent-1001-wss@${realm}`,
-        displayName: 'Agent (Direct WSS)'
+        wsUri: `ws://localhost:8088/ws`,
+        sipUri: `sip:agent-1001@${realm}`,
+        displayName: 'Agent (Direct WS)'
       },
       fallback: {
         wsUri: `ws://localhost:8088/ws`,
         sipUri: `sip:agent-1001@${realm}`,
-        displayName: 'Agent (Direct WS)'
+        displayName: 'Agent (WS Retry)'
       }
     }
   };
@@ -66,17 +69,24 @@ const SoftphoneAdaptive = () => {
     try {
       setStatus('Obtendo credenciais...');
       
-      const credsResponse = await fetch('/api/webrtc/credentials');
+      const credsResponse = await fetch(getApiUrl('/webrtc/credentials'));
       if (!credsResponse.ok) throw new Error('Falha ao buscar credenciais do WebRTC.');
       const credentials = await credsResponse.json();
 
-      const iceResponse = await fetch('/api/webrtc/ice-servers');
+      const iceResponse = await fetch(getApiUrl('/webrtc/ice-servers'));
       const iceServers = iceResponse.ok ? await iceResponse.json() : [];
 
       // --- Lógica Centralizada de Configuração de Ambiente ---
       const envConfig = getEnvironmentConfig();
       let config: { wsUri: string; sipUri: string; displayName: string };
       let connectionInfo: string;
+
+      // Log para debug
+      logger.debug('Configuração de ambiente:', {
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined',
+        isProduction: envConfig.isProduction,
+        reconnectAttempts
+      });
 
       if (envConfig.isProduction) {
         config = envConfig.production;
@@ -85,14 +95,21 @@ const SoftphoneAdaptive = () => {
       } else {
         if (reconnectAttempts < 3) {
           config = envConfig.development.primary;
-          connectionInfo = 'Dev (Direct WSS)';
-          setIsSecure(true);
+          connectionInfo = 'Dev (Direct WS)';
+          setIsSecure(false);
         } else {
           config = envConfig.development.fallback;
-          connectionInfo = 'Dev (Direct WS)';
+          connectionInfo = 'Dev (WS Retry)';
           setIsSecure(false);
         }
       }
+
+      // Log da configuração selecionada
+      logger.debug('Configuração WebSocket selecionada:', {
+        wsUri: config.wsUri,
+        displayName: config.displayName,
+        connectionInfo
+      });
       // --- Fim da Lógica de Configuração ---
 
       setConnectionType(connectionInfo);

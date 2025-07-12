@@ -67,8 +67,7 @@ const HealthCheck = ({ title, url, testName }: { title: string; url: string; tes
 
 
 const DebugPage = () => {
-  // Remove a dependência da variável NEXT_PUBLIC_API_URL
-  const agentPassword = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
+  // Remove a dependência da variável NEXT_PUBLIC_AGENT_PASSWORD (não mais necessária)
   const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST;
   const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH;
   const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM;
@@ -82,20 +81,31 @@ const DebugPage = () => {
         </p>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Coluna de Variáveis de Ambiente */}
-          <div className="p-4 bg-white border rounded-lg shadow-sm">
-            <h3 className="mb-3 text-lg font-semibold text-gray-700">🌏 Variáveis de Ambiente (Frontend)</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 border-b">
-                <span className="font-mono text-sm text-gray-600">Detecção de Ambiente</span>
-                <span className="px-2 py-1 text-xs font-bold text-blue-800 bg-blue-200 rounded-full">
-                  {typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'Desenvolvimento (localhost)' : 'Produção'}
+          {/* Variáveis de Ambiente (Frontend) */}
+          <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="flex items-center mb-4">
+              <span className="text-2xl mr-3">🌍</span>
+              <h2 className="text-xl font-semibold text-gray-800">Variáveis de Ambiente (Frontend)</h2>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <span className="font-medium text-gray-700">Detecção de Ambiente</span>
+                <span className="px-3 py-1 text-sm font-medium text-blue-800 bg-blue-200 rounded-full">
+                  Desenvolvimento (localhost)
                 </span>
               </div>
-              <EnvVarStatus name="NEXT_PUBLIC_AGENT_PASSWORD" value={agentPassword} />
+              
               <EnvVarStatus name="NEXT_PUBLIC_EASYPANEL_HOST" value={easypanelHost} />
               <EnvVarStatus name="NEXT_PUBLIC_WEBSOCKET_PATH" value={websocketPath} />
               <EnvVarStatus name="NEXT_PUBLIC_ASTERISK_REALM" value={realm} />
+              
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Nota:</strong> As credenciais do agente agora são obtidas dinamicamente via API 
+                  (<code>/api/webrtc/credentials</code>) para maior segurança.
+                </p>
+              </div>
             </div>
           </div>
           

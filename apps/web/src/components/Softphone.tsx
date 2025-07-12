@@ -26,18 +26,27 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
       return;
     }
 
-    // WSS via EasyPanel - SSL Termination otimizado
-    // EasyPanel recebe WSS e encaminha como WS para o Asterisk
-    const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
-    const socket = new JsSIP.WebSocketInterface(`wss://${easypanelHost}/ws`);
-    
-    // Configuração otimizada para SSL termination via EasyPanel
+    // Lógica de detecção de ambiente
+    const isDevelopment = window.location.hostname === 'localhost';
+    let socket;
+    let statusMessage: string;
+
+    if (isDevelopment) {
+      // Configuração para desenvolvimento local (WS direto)
+      socket = new JsSIP.WebSocketInterface('ws://localhost:8088/ws');
+      statusMessage = 'Registrado via WS (Local)';
+    } else {
+      // Configuração para produção (WSS via EasyPanel)
+      const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST || 'clicktocall-ctc.2w4klq.easypanel.host';
+      socket = new JsSIP.WebSocketInterface(`wss://${easypanelHost}/ws`);
+      statusMessage = 'Registrado via WSS (EasyPanel)';
+    }
+
     const configuration = {
-      sockets: [socket], // WSS via EasyPanel -> WS para Asterisk
-      uri: `sip:agent-1001@clicktocall.local`, // Endpoint atualizado
-      password: agentPassword, // Usa a senha recebida via props
+      sockets: [socket],
+      uri: `sip:agent-1001@clicktocall.local`, // Endpoint consistente
+      password: agentPassword,
       register: true,
-      // Configurações adicionais para WebRTC seguro
       session_timers: false,
       rtcp_feedback: {
         audio: true,
@@ -48,12 +57,10 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
     const ua = new JsSIP.UA(configuration);
     uaRef.current = ua;
 
-    ua.on('registered', () => setStatus('Registrado via WSS (EasyPanel)'));
+    ua.on('registered', () => setStatus(statusMessage));
     ua.on('unregistered', () => setStatus('Não Registrado'));
-    // Usando 'any' para o tipo do evento
     ua.on('registrationFailed', (e: any) => setStatus(`Falha no Registro: ${e.cause}`));
 
-    // Usando 'any' para o tipo do evento
     ua.on('newRTCSession', (data: any) => {
       const session = data.session;
       sessionRef.current = session;
@@ -72,7 +79,7 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
       });
 
       session.on('ended', () => {
-        setStatus('Registrado via WSS (EasyPanel)');
+        setStatus(statusMessage);
         setInCall(false);
       });
 
@@ -85,12 +92,14 @@ export const Softphone: React.FC<SoftphoneProps> = ({ agentId, agentPassword }) 
     ua.start();
 
     return () => {
-      if (ua.isRegistered()) {
-        ua.unregister();
+      if (uaRef.current) {
+        if (uaRef.current.isRegistered()) {
+          uaRef.current.unregister();
+        }
+        uaRef.current.stop();
       }
-      ua.stop();
     };
-  }, [agentId, agentPassword]); // Adicionado agentId e agentPassword às dependências
+  }, [agentId, agentPassword]);
 
   const handleCall = (destination: string) => {
     if (uaRef.current) {

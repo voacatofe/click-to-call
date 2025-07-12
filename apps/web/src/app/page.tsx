@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Softphone } from '@/components/Softphone';
 import { Button } from '@/components/ui/Button';
+import { getApiUrl } from '@/lib/api'; // Importa a função para construir URLs da API
 
 export default function Home() {
   const [showSoftphone, setShowSoftphone] = useState(false);
@@ -12,7 +13,7 @@ export default function Home() {
 
   const fetchAgentCredentials = async () => {
     try {
-      const response = await fetch('/api/webrtc/credentials');
+      const response = await fetch(getApiUrl('/webrtc/credentials'));
       if (response.ok) {
         const data = await response.json();
         setAgentId(data.agentId);

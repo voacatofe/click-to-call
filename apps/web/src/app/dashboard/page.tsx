@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { Settings, Save, Eye, EyeOff, LogOut, User, Phone } from 'lucide-react'
 import { Softphone } from '@/components/Softphone'
+import { getApiUrl } from '@/lib/api' // Importa a função para construir URLs da API
 
 // Force dynamic rendering since we use auth
 export const dynamic = 'force-dynamic'
@@ -42,7 +43,7 @@ export default function DashboardPage() {
   const fetchAgentCredentials = async () => {
     try {
       // Este endpoint precisará ser criado na nossa API
-      const response = await fetch('/api/webrtc/credentials')
+      const response = await fetch(getApiUrl('/webrtc/credentials'))
       if (response.ok) {
         const data = await response.json()
         setAgentId(data.agentId)
@@ -58,7 +59,7 @@ export default function DashboardPage() {
 
   const checkExistingToken = async () => {
     try {
-      const response = await fetch('/api/rd-station/token', {
+      const response = await fetch(getApiUrl('/rd-station/token'), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +86,7 @@ export default function DashboardPage() {
     setSuccess(false)
 
     try {
-      const response = await fetch('/api/rd-station/token', {
+      const response = await fetch(getApiUrl('/rd-station/token'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
