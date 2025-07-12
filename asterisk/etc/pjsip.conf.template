@@ -1,13 +1,13 @@
-# =============================================================================
-# PJSIP Configuration - Robust SSL/TLS Termination
-# Supports both Development and Production environments
-# Production: EasyPanel SSL Termination (WSS -> WS)
-# Development: Direct WebSocket connection
-# =============================================================================
+; =============================================================================
+; PJSIP Configuration - Robust SSL/TLS Termination
+; Supports both Development and Production environments
+; Production: EasyPanel SSL Termination (WSS -> WS)
+; Development: Direct WebSocket connection
+; =============================================================================
 
-# -----------------------------------------------------------------------------
-# WebSocket Transport (Primary - for EasyPanel SSL Termination)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; WebSocket Transport (Primary - for EasyPanel SSL Termination)
+; -----------------------------------------------------------------------------
 [transport-ws]
 type=transport
 protocol=ws
@@ -24,9 +24,9 @@ keep_alive_interval=90
 ; Aumentar timeouts para conexões via proxy
 connection_timeout=180
 
-# -----------------------------------------------------------------------------
-# WebSocket Secure Transport (Fallback - for direct SSL if needed)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; WebSocket Secure Transport (Fallback - for direct SSL if needed)
+; -----------------------------------------------------------------------------
 [transport-wss]
 type=transport
 protocol=wss
@@ -43,9 +43,9 @@ external_signaling_address=${EXTERNAL_IP}
 verify_server=no
 verify_client=no
 
-# -----------------------------------------------------------------------------
-# Agent Endpoint (Primary - via WebSocket)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Agent Endpoint (Primary - via WebSocket)
+; -----------------------------------------------------------------------------
 [agent-1001]
 type=endpoint
 transport=transport-ws
@@ -78,9 +78,9 @@ rtp_timeout_hold=300
 codec_prefs_incoming_offer=prefer:ulaw,alaw,opus
 codec_prefs_outgoing_offer=prefer:ulaw,alaw,opus
 
-# -----------------------------------------------------------------------------
-# Agent Endpoint (Fallback - via WebSocket Secure)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Agent Endpoint (Fallback - via WebSocket Secure)
+; -----------------------------------------------------------------------------
 [agent-1001-wss]
 type=endpoint
 transport=transport-wss
@@ -110,9 +110,9 @@ ice_support=yes
 rtp_timeout=60
 rtp_timeout_hold=300
 
-# -----------------------------------------------------------------------------
-# Address of Record (AOR) Configurations
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Address of Record (AOR) Configurations
+; -----------------------------------------------------------------------------
 [agent-1001-aor]
 type=aor
 max_contacts=3
@@ -135,9 +135,9 @@ minimum_expiration=60
 qualify_frequency=30
 qualify_timeout=3
 
-# -----------------------------------------------------------------------------
-# Authentication Configuration
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Authentication Configuration
+; -----------------------------------------------------------------------------
 [agent-1001-auth]
 type=auth
 auth_type=userpass
@@ -145,9 +145,9 @@ username=agent-1001
 password=${AGENT_1001_PASSWORD}
 realm=clicktocall.local
 
-# -----------------------------------------------------------------------------
-# Additional Security Endpoints (for future expansion)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Additional Security Endpoints (for future expansion)
+; -----------------------------------------------------------------------------
 ; Template for additional agents
 [agent-template](!)
 type=endpoint
@@ -177,9 +177,9 @@ type=auth
 auth_type=userpass
 realm=clicktocall.local
 
-# -----------------------------------------------------------------------------
-# Production Trunk Configuration (for future SIP provider integration)
-# -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Production Trunk Configuration (for future SIP provider integration)
+; -----------------------------------------------------------------------------
 [trunk-production]
 type=endpoint
 transport=transport-ws
@@ -191,7 +191,7 @@ allow=ulaw,alaw,gsm
 ; aors=trunk-aor
 ; outbound_auth=trunk-auth
 
-# Note: Uncomment and configure when integrating with SIP provider
+; Note: Uncomment and configure when integrating with SIP provider
 ; [trunk-auth]
 ; type=auth
 ; auth_type=userpass

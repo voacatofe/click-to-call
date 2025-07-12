@@ -11,9 +11,13 @@ services:
       # RTP (essencial para o áudio)
       - "10000-10200:10000-10200/udp"
     volumes:
-      # Certificados para DTLS (mídia) - ainda necessários
-      - ./certs:/etc/asterisk/keys
-      - ./asterisk/etc:/etc/asterisk
+      # Monta os certificados gerados para a pasta correta
+      - ./asterisk/certs:/etc/asterisk/keys
+      # Monta os arquivos de configuração
+      - ./asterisk/etc/manager.conf:/etc/asterisk/manager.conf
+      - ./asterisk/etc/pjsip.conf.template:/etc/asterisk/pjsip.conf.template
+      - ./asterisk/etc/http.conf:/etc/asterisk/http.conf
+      - ./asterisk/etc/rtp.conf.template:/etc/asterisk/rtp.conf.template
       - ./asterisk/sounds:/var/lib/asterisk/sounds
       - asterisk_recordings:/var/spool/asterisk/monitor
     environment:
