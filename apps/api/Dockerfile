@@ -19,7 +19,7 @@ COPY turbo.json turbo.json
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/api/ ./apps/api/
 # Otimizando a instalação e o build
-RUN npm i -g pnpm && pnpm install --frozen-lockfile
+RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=api
 
 # --- 3. Estágio de Produção ---

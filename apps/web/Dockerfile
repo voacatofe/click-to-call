@@ -28,7 +28,7 @@ COPY turbo.json turbo.json
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY apps/web/ ./apps/web/
 # Otimizando a instalação e o build
-RUN npm i -g pnpm && pnpm install --frozen-lockfile
+RUN npm i -g pnpm turbo && pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=web
 
 # --- 3. Estágio de Produção ---
