@@ -89,8 +89,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Passa TODAS as variáveis NEXT_PUBLIC como argumentos de build
-        NEXT_PUBLIC_AGENT_PASSWORD: ${NEXT_PUBLIC_AGENT_PASSWORD}
+        # Passa as variáveis para o build do Next.js
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_EASYPANEL_HOST: ${NEXT_PUBLIC_EASYPANEL_HOST}
         NEXT_PUBLIC_WEBSOCKET_PATH: ${NEXT_PUBLIC_WEBSOCKET_PATH}
         NEXT_PUBLIC_ASTERISK_REALM: ${NEXT_PUBLIC_ASTERISK_REALM}
@@ -104,7 +104,7 @@ services:
     # pois os valores já foram embutidos no build, mas é uma boa prática mantê-las.
     environment:
       - NODE_ENV=production
-      # NEXT_PUBLIC_API_URL removida
+      # NEXT_PUBLIC_API_URL removida - detecção automática via hostname
       - NEXT_PUBLIC_AGENT_PASSWORD=${NEXT_PUBLIC_AGENT_PASSWORD}
       - NEXT_PUBLIC_EASYPANEL_HOST=${NEXT_PUBLIC_EASYPANEL_HOST}
       - NEXT_PUBLIC_WEBSOCKET_PATH=${NEXT_PUBLIC_WEBSOCKET_PATH}

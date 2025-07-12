@@ -66,7 +66,6 @@ const SoftphoneAdaptive = () => {
     try {
       setStatus('Obtendo credenciais...');
       
-      // 1. Busca as credenciais do agente E os servidores ICE do nosso backend
       const credsResponse = await fetch('/api/webrtc/credentials');
       if (!credsResponse.ok) throw new Error('Falha ao buscar credenciais do WebRTC.');
       const credentials = await credsResponse.json();
@@ -74,9 +73,31 @@ const SoftphoneAdaptive = () => {
       const iceResponse = await fetch('/api/webrtc/ice-servers');
       const iceServers = iceResponse.ok ? await iceResponse.json() : [];
 
-      setStatus('Conectando...');
+      // --- Lógica Centralizada de Configuração de Ambiente ---
+      const envConfig = getEnvironmentConfig();
+      let config: { wsUri: string; sipUri: string; displayName: string };
+      let connectionInfo: string;
+
+      if (envConfig.isProduction) {
+        config = envConfig.production;
+        connectionInfo = 'Produção (EasyPanel SSL)';
+        setIsSecure(true);
+      } else {
+        if (reconnectAttempts < 3) {
+          config = envConfig.development.primary;
+          connectionInfo = 'Dev (Direct WSS)';
+          setIsSecure(true);
+        } else {
+          config = envConfig.development.fallback;
+          connectionInfo = 'Dev (Direct WS)';
+          setIsSecure(false);
+        }
+      }
+      // --- Fim da Lógica de Configuração ---
+
+      setConnectionType(connectionInfo);
+      setStatus(`Conectando via ${connectionInfo}...`);
       
-      const config = getEnvironmentConfig();
       const socket = new JsSIP.WebSocketInterface(config.wsUri);
       
       const configuration = {
@@ -111,8 +132,8 @@ const SoftphoneAdaptive = () => {
 
       // Event handlers robustos
       ua.on('registered', (e) => {
-        logger.info(`Registrado com sucesso via ${connectionInfo}`);
-        setStatus(`Online (${connectionInfo})`);
+        logger.info(`Registrado com sucesso via ${config.displayName}`);
+        setStatus(`Online (${config.displayName})`);
         setReconnectAttempts(0);
         
         if (reconnectTimeoutRef.current) {
@@ -128,7 +149,7 @@ const SoftphoneAdaptive = () => {
 
       ua.on('registrationFailed', (e) => {
         const cause = e.cause || 'Unknown';
-        logger.error(`Falha no registro via ${connectionInfo}:`, cause);
+        logger.error(`Falha no registro via ${config.displayName}:`, cause);
         // Verifica se o erro é de conexão WebSocket
         if (cause === JsSIP.C.causes.CONNECTION_ERROR) {
           setStatus(`Falha WebSocket: Verifique o proxy e a rede.`);
@@ -170,7 +191,7 @@ const SoftphoneAdaptive = () => {
       });
       
       ua.on('newRTCSession', (data: any) => {
-        logger.debug(`Nova sessão RTC via ${connectionInfo}`);
+        logger.debug(`Nova sessão RTC via ${config.displayName}`);
         const session = data.session;
         setSession(session);
 
@@ -210,7 +231,7 @@ const SoftphoneAdaptive = () => {
 
         session.on('ended', () => {
           logger.info('Chamada finalizada');
-          setStatus(`Online (${connectionInfo})`);
+          setStatus(`Online (${config.displayName})`);
           setInCall(false);
         });
 

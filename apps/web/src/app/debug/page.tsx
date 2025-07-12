@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getApiUrl } from '@/lib/api'; // Importa a nova função
 
 // Componente para exibir o status de uma variável de ambiente
 const EnvVarStatus = ({ name, value }: { name: string; value: string | undefined }) => {
@@ -29,8 +30,9 @@ const HealthCheck = ({ title, url, testName }: { title: string; url: string; tes
   const runTest = async () => {
     setStatus({ ok: false, message: 'Testando...' });
     try {
-      // Usa a URL relativa diretamente no fetch
-      const response = await fetch(url);
+      // Usa a função getApiUrl para construir a URL correta
+      const fullUrl = getApiUrl(url);
+      const response = await fetch(fullUrl);
       const data = await response.json();
       if (response.ok) {
         setStatus({ ok: true, message: `${testName} OK - ${JSON.stringify(data)}` });
@@ -65,7 +67,7 @@ const HealthCheck = ({ title, url, testName }: { title: string; url: string; tes
 
 
 const DebugPage = () => {
-  // Remove a dependência da variável de ambiente NEXT_PUBLIC_API_URL
+  // Remove a dependência da variável NEXT_PUBLIC_API_URL
   const agentPassword = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
   const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST;
   const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH;
@@ -84,7 +86,12 @@ const DebugPage = () => {
           <div className="p-4 bg-white border rounded-lg shadow-sm">
             <h3 className="mb-3 text-lg font-semibold text-gray-700">🌏 Variáveis de Ambiente (Frontend)</h3>
             <div className="space-y-2">
-              {/* Removida a exibição de NEXT_PUBLIC_API_URL pois agora é implícita */}
+              <div className="flex items-center justify-between p-2 border-b">
+                <span className="font-mono text-sm text-gray-600">Detecção de Ambiente</span>
+                <span className="px-2 py-1 text-xs font-bold text-blue-800 bg-blue-200 rounded-full">
+                  {typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'Desenvolvimento (localhost)' : 'Produção'}
+                </span>
+              </div>
               <EnvVarStatus name="NEXT_PUBLIC_AGENT_PASSWORD" value={agentPassword} />
               <EnvVarStatus name="NEXT_PUBLIC_EASYPANEL_HOST" value={easypanelHost} />
               <EnvVarStatus name="NEXT_PUBLIC_WEBSOCKET_PATH" value={websocketPath} />
@@ -96,12 +103,12 @@ const DebugPage = () => {
           <div className="space-y-6">
             <HealthCheck 
               title="📡 Status da API"
-              url="/api/health" // URL relativa
+              url="/api/health" // A URL relativa é mantida aqui
               testName="API"
             />
             <HealthCheck
               title="🧊 ICE Servers (TURN/STUN)"
-              url="/api/webrtc/ice-servers" // URL relativa
+              url="/api/webrtc/ice-servers" // A URL relativa é mantida aqui
               testName="ICE"
             />
           </div>
