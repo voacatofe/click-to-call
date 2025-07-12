@@ -1,22 +1,31 @@
 #!/bin/sh
 set -e
 
-# Configurações de usuário e grupo (se fornecidas)
-if [ -n "$ASTERISK_UID" ] && [ -n "$ASTERISK_GID" ]; then
-    # Altera o UID e GID do usuário asterisk se as variáveis estiverem definidas
-    echo "Changing Asterisk user/group to $ASTERISK_UID:$ASTERISK_GID"
-    deluser asterisk
-    addgroup -g "$ASTERISK_GID" asterisk
-    adduser -D -H -u "$ASTERISK_UID" -G asterisk asterisk
-else
-    echo "Running with default Asterisk user/group."
-fi
+# --- Aguarda pelos Certificados ---
+CERT_FILE="/etc/asterisk/keys/asterisk.crt"
+KEY_FILE="/etc/asterisk/keys/asterisk.key"
 
-# Ajusta as permissões dos diretórios
+echo "Aguardando certificados em $CERT_FILE e $KEY_FILE..."
+while [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; do
+  sleep 2
+done
+echo "Certificados encontrados."
+
+# --- Processa os Templates de Configuração ---
+echo "Processando templates de configuração..."
+for template in /etc/asterisk/*.template; do
+  if [ -f "$template" ]; then
+    config_file=$(echo "$template" | sed 's/\.template$//')
+    echo "Gerando $config_file a partir de $template..."
+    envsubst < "$template" > "$config_file"
+  fi
+done
+
+# --- Ajusta Permissões ---
 chown -R asterisk:asterisk /etc/asterisk /var/lib/asterisk /var/log/asterisk /var/run/asterisk /var/spool/asterisk
 
-# Adicionando o '-f' para rodar em primeiro plano e o '-c' para logar no console
-# Isto é crucial para que os logs sejam capturados pelo Docker/EasyPanel
+# --- Inicia o Asterisk ---
+echo "Iniciando o Asterisk..."
 if [ "$1" = "asterisk" ]; then
   exec su-exec asterisk tini -s -- asterisk -f -c -vvvv
 fi
