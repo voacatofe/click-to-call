@@ -62,67 +62,27 @@ const SoftphoneAdaptive = () => {
   const reconnectDelay = 3000;
 
   // Configuração robusta de conexão
-  const connect = useCallback(async (forceConfig?: any) => {
+  const connect = useCallback(async () => {
     try {
-      setStatus('Obtendo configuração...');
+      setStatus('Obtendo credenciais...');
       
-      // Buscar ICE servers
-      let iceServers = [];
-      try {
-        const response = await fetch('/api/webrtc/ice-servers');
-        if (response.ok) {
-          iceServers = await response.json();
-          logger.debug('ICE servers obtidos:', iceServers);
-        }
-      } catch (error) {
-        logger.warn('Falha ao obter ICE servers, usando padrão:', error);
-      }
+      // 1. Busca as credenciais do agente E os servidores ICE do nosso backend
+      const credsResponse = await fetch('/api/webrtc/credentials');
+      if (!credsResponse.ok) throw new Error('Falha ao buscar credenciais do WebRTC.');
+      const credentials = await credsResponse.json();
 
-      const envConfig = getEnvironmentConfig();
-      const password = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
+      const iceResponse = await fetch('/api/webrtc/ice-servers');
+      const iceServers = iceResponse.ok ? await iceResponse.json() : [];
 
-      if (!password) {
-        throw new Error('Senha do agente não configurada');
-      }
-
-      let config: { wsUri: string; sipUri: string; displayName: string };
-      let connectionInfo: string;
-
-      if (forceConfig) {
-        config = forceConfig;
-        connectionInfo = forceConfig.displayName;
-      } else if (envConfig.isProduction) {
-        // Produção: Sempre usar EasyPanel SSL Termination
-        config = envConfig.production;
-        connectionInfo = 'Produção (EasyPanel SSL)';
-        setIsSecure(true);
-      } else {
-        // Desenvolvimento: Tentar WSS primeiro, depois WS
-        if (reconnectAttempts < 3) {
-          config = envConfig.development.primary;
-          connectionInfo = 'Dev (Direct WSS)';
-          setIsSecure(true);
-        } else {
-          config = envConfig.development.fallback;
-          connectionInfo = 'Dev (Direct WS)';
-          setIsSecure(false);
-        }
-      }
-
-      setConnectionType(connectionInfo);
-      setStatus(`Conectando via ${connectionInfo}...`);
+      setStatus('Conectando...');
       
-      logger.info(`Tentando conectar via: ${config.wsUri}`);
-      
+      const config = getEnvironmentConfig();
       const socket = new JsSIP.WebSocketInterface(config.wsUri);
-      
-      // A linha que causava o erro de build foi removida.
-      // O tratamento de erro robusto já está nos eventos 'registrationFailed' e 'disconnected' da UA.
       
       const configuration = {
         sockets: [socket],
-        uri: config.sipUri,
-        password: password,
+        uri: `sip:${credentials.agentId}@${credentials.realm}`,
+        password: credentials.password,
         register: true,
         ice_servers: iceServers,
         session_timers: false,

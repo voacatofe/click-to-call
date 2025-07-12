@@ -17,9 +17,9 @@ router.get('/health', (req, res) => {
 });
 
 // API Routes
-router.use('/calls', callRoutes);
-router.use('/companies', companyRoutes);
 router.use('/rdcrm', rdcrmRoutes);
+router.use('/call', callRoutes);
+router.use('/company', companyRoutes);
 router.use('/webrtc', webrtcRoutes);
 
 export default router; 

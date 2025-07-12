@@ -1,15 +1,20 @@
 import { Router } from 'express';
-import { 
-    getIceServersController, 
-    getAgentCredentialsController 
-} from '../controllers/webrtc.controller';
+import { getWebRTCCredentials } from '../controllers/webrtc.controller';
+import { getIceServers } from '../services/webrtc.service';
 
 const router = Router();
 
-// Rota para obter servidores ICE do Twilio (usado pelo cliente WebRTC)
-router.get('/ice-servers', getIceServersController);
+// Rota para obter credenciais do agente (ID, senha, realm)
+router.get('/credentials', getWebRTCCredentials);
 
-// Rota para obter credenciais do agente Asterisk de forma segura
-router.get('/credentials', getAgentCredentialsController);
+// Rota para obter servidores ICE (STUN/TURN)
+router.get('/ice-servers', async (req, res) => {
+    try {
+        const iceServers = await getIceServers();
+        res.json(iceServers);
+    } catch (error) {
+        res.status(500).json({ error: 'Falha ao obter servidores ICE.' });
+    }
+});
 
 export default router; 

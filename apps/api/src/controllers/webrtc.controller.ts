@@ -1,22 +1,18 @@
 import { Request, Response } from 'express';
-import { getIceServers, getAgentCredentials } from '../services/webrtc.service';
 
-export const getIceServersController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const iceServers = await getIceServers();
-    res.status(200).json(iceServers);
-  } catch (error) {
-        // O erro já é logado no serviço, aqui apenas retornamos uma resposta genérica.
-    res.status(500).json({ message: 'Failed to fetch ICE servers' });
+// Esta função retorna as credenciais do agente a partir das variáveis de ambiente.
+// Em um sistema real, isso poderia vir de um banco de dados ou de um serviço de segredos.
+export const getWebRTCCredentials = (req: Request, res: Response) => {
+  const agentId = process.env.AGENT_1001_ID || 'agent-1001';
+  const agentPassword = process.env.AGENT_1001_PASSWORD;
+
+  if (!agentPassword) {
+    return res.status(500).json({ error: 'A senha do agente não está configurada no servidor.' });
   }
-};
 
-export const getAgentCredentialsController = (req: Request, res: Response): void => {
-    try {
-        const credentials = getAgentCredentials();
-        res.status(200).json(credentials);
-    } catch (error) {
-        // O erro (variável de ambiente faltando) já é logado no serviço.
-        res.status(500).json({ message: 'Server security configuration is incomplete.' });
-    }
+  res.json({
+    agentId,
+    password: agentPassword,
+    realm: process.env.ASTERISK_REALM || 'clicktocall.local'
+  });
 }; 
