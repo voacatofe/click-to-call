@@ -1,166 +1,114 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
+import React from 'react';
 
-export default function DebugPage() {
-  const [apiStatus, setApiStatus] = useState('Testando...');
-  const [iceStatus, setIceStatus] = useState('Testando...');
-  const [envVars, setEnvVars] = useState<Record<string, string | undefined>>({});
+// Componente para exibir o status de uma variável de ambiente
+const EnvVarStatus = ({ name, value }: { name: string; value: string | undefined }) => {
+  const isConfigured = value && value !== 'your-secure-agent-password-here';
+  
+  return (
+    <div className="flex items-center justify-between p-2 border-b">
+      <span className="font-mono text-sm text-gray-600">{name}</span>
+      {isConfigured ? (
+        <span className="px-2 py-1 text-xs font-bold text-green-800 bg-green-200 rounded-full">
+          {name.includes('PASSWORD') ? '••••••••' : value}
+        </span>
+      ) : (
+        <span className="px-2 py-1 text-xs font-bold text-red-800 bg-red-200 rounded-full">
+          ✖ Não configurada
+        </span>
+      )}
+    </div>
+  );
+};
 
-  // Carregar variáveis de ambiente do cliente
-  useEffect(() => {
-    setEnvVars({
-      API_URL: process.env.NEXT_PUBLIC_API_URL,
-      ASTERISK_HOST: process.env.NEXT_PUBLIC_ASTERISK_HOST,
-      AGENT_PASSWORD: process.env.NEXT_PUBLIC_AGENT_PASSWORD,
-      WEBSOCKET_PATH: process.env.NEXT_PUBLIC_WEBSOCKET_PATH,
-    });
-  }, []);
+// Componente para testar um endpoint e mostrar o status
+const HealthCheck = ({ title, url, testName }: { title: string; url: string; testName: string }) => {
+  const [status, setStatus] = React.useState<{ ok: boolean; message: string }>({ ok: false, message: 'Aguardando teste...' });
 
-  // Testar API Health
-  const testApiHealth = async () => {
+  const runTest = async () => {
+    setStatus({ ok: false, message: 'Testando...' });
     try {
-      setApiStatus('Testando...');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/health`);
-      
+      const response = await fetch(url);
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
-        setApiStatus(`✅ API OK - ${data.service} v${data.version}`);
+        setStatus({ ok: true, message: `${testName} OK - ${JSON.stringify(data)}` });
       } else {
-        setApiStatus(`❌ API Error ${response.status}: ${response.statusText}`);
+        throw new Error(data.error || 'Erro desconhecido');
       }
     } catch (error) {
-      setApiStatus(`❌ API Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setStatus({ ok: false, message: `Falha no teste: ${errorMessage}` });
     }
   };
 
-  // Testar ICE Servers
-  const testIceServers = async () => {
-    try {
-      setIceStatus('Testando...');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/webrtc/ice-servers`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIceStatus(`✅ ICE Servers OK - ${JSON.stringify(data, null, 2)}`);
-      } else {
-        setIceStatus(`❌ ICE Error ${response.status}: ${response.statusText}`);
-      }
-    } catch (error) {
-      setIceStatus(`❌ ICE Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-    }
-  };
-
-  // Auto-test ao carregar
-  useEffect(() => {
-    testApiHealth();
-    testIceServers();
-  }, []);
+  React.useEffect(() => {
+    runTest();
+  }, [url]);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="p-4 bg-white border rounded-lg shadow-sm">
+      <h3 className="mb-2 text-lg font-semibold text-gray-700">{title}</h3>
+      <div className={`p-3 rounded-md ${status.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <p className="text-sm font-medium">{status.message}</p>
+      </div>
+      <button 
+        onClick={runTest}
+        className="w-full px-4 py-2 mt-3 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Testar Novamente
+      </button>
+    </div>
+  );
+};
+
+
+const DebugPage = () => {
+  // Lê as variáveis de ambiente corretas do Next.js
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const agentPassword = process.env.NEXT_PUBLIC_AGENT_PASSWORD;
+  const easypanelHost = process.env.NEXT_PUBLIC_EASYPANEL_HOST;
+  const websocketPath = process.env.NEXT_PUBLIC_WEBSOCKET_PATH;
+  const realm = process.env.NEXT_PUBLIC_ASTERISK_REALM;
+
+  return (
+    <div className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">🔍 Debug - Ambiente Easypanel</h1>
-        
-        {/* Variáveis de Ambiente */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">🌍 Variáveis de Ambiente</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(envVars).map(([key, value]) => (
-              <div key={key} className="border-l-4 border-blue-500 pl-4">
-                <div className="font-mono text-sm font-medium text-gray-700">{key}</div>
-                <div className="font-mono text-xs text-gray-500 break-all">
-                  {value || '❌ Não configurada'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <h1 className="mb-4 text-4xl font-bold text-center text-gray-800">Debug - Ambiente EasyPanel</h1>
+        <p className="mb-8 text-lg text-center text-gray-600">
+          Página de diagnóstico para verificar a saúde e configuração do ambiente de produção.
+        </p>
 
-        {/* Status da API */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">🏥 Status da API</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Health Check:</span>
-              <Button onClick={testApiHealth} className="bg-blue-600 hover:bg-blue-700">
-                🔄 Testar Again
-              </Button>
-            </div>
-            <div className={`p-3 rounded font-mono text-sm ${
-              apiStatus.includes('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {apiStatus}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Coluna de Variáveis de Ambiente */}
+          <div className="p-4 bg-white border rounded-lg shadow-sm">
+            <h3 className="mb-3 text-lg font-semibold text-gray-700">🌏 Variáveis de Ambiente (Frontend)</h3>
+            <div className="space-y-2">
+              <EnvVarStatus name="NEXT_PUBLIC_API_URL" value={apiUrl} />
+              <EnvVarStatus name="NEXT_PUBLIC_AGENT_PASSWORD" value={agentPassword} />
+              <EnvVarStatus name="NEXT_PUBLIC_EASYPANEL_HOST" value={easypanelHost} />
+              <EnvVarStatus name="NEXT_PUBLIC_WEBSOCKET_PATH" value={websocketPath} />
+              <EnvVarStatus name="NEXT_PUBLIC_ASTERISK_REALM" value={realm} />
             </div>
           </div>
-        </div>
-
-        {/* Status ICE Servers */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">🧊 ICE Servers (TURN/STUN)</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">WebRTC ICE Servers:</span>
-              <Button onClick={testIceServers} className="bg-purple-600 hover:bg-purple-700">
-                🔄 Testar Again
-              </Button>
-            </div>
-            <div className={`p-3 rounded font-mono text-sm max-h-64 overflow-auto ${
-              iceStatus.includes('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              <pre className="whitespace-pre-wrap">{iceStatus}</pre>
-            </div>
+          
+          {/* Coluna de Health Checks */}
+          <div className="space-y-6">
+            <HealthCheck 
+              title="📡 Status da API"
+              url={`${apiUrl}/api/health`}
+              testName="API"
+            />
+            <HealthCheck
+              title="🧊 ICE Servers (TURN/STUN)"
+              url={`${apiUrl}/api/webrtc/ice-servers`}
+              testName="ICE"
+            />
           </div>
-        </div>
-
-        {/* URLs de Teste */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">🔗 URLs para Teste Manual</h2>
-          <div className="space-y-2">
-            <div>
-              <strong>API Health:</strong>{' '}
-              <a 
-                href={`${envVars.API_URL}/api/health`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline font-mono text-sm"
-              >
-                {envVars.API_URL}/api/health
-              </a>
-            </div>
-            <div>
-              <strong>ICE Servers:</strong>{' '}
-              <a 
-                href={`${envVars.API_URL}/api/webrtc/ice-servers`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline font-mono text-sm"
-              >
-                {envVars.API_URL}/api/webrtc/ice-servers
-              </a>
-            </div>
-            <div>
-              <strong>WebSocket WSS:</strong>{' '}
-              <span className="font-mono text-sm text-gray-700">
-                wss://{envVars.ASTERISK_HOST}:8089/ws
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Botão para voltar */}
-        <div className="text-center">
-          <Button 
-            onClick={() => window.location.href = '/'}
-            className="bg-gray-600 hover:bg-gray-700"
-          >
-            ← Voltar para o Softphone
-          </Button>
         </div>
       </div>
     </div>
   );
-} 
+};
+
+export default DebugPage; 
